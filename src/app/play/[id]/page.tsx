@@ -29,15 +29,18 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const [refreshKey, setRefreshKey] = useState(0);
   const [song, setSong] = useState<Song | null>(null);
   const [allSongs, setAllSongs] = useState<Song[]>([]);
+  const [isLoading, setIsLoading] = useState(true);  // 添加加载状态
   const lyricItemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // 加载歌曲和所有歌曲
   useEffect(() => {
     const loadData = async () => {
+      setIsLoading(true);
       const songData = await getSongById(songId);
       setSong(songData);
       const songsData = await getSongs();
       setAllSongs(songsData);
+      setIsLoading(false);
     };
     loadData();
   }, [songId, refreshKey]);
@@ -76,12 +79,12 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
     loadLyrics();
   }, [song?.lyrics, song?.lyricsUrl, refreshKey]);
 
-  // 如果歌曲不存在，重定向到专辑列表
+  // 如果歌曲不存在且不是加载状态，重定向到专辑列表
   useEffect(() => {
-    if (!song) {
+    if (!isLoading && !song) {
       router.push('/music');
     }
-  }, [songId, router, refreshKey]);
+  }, [songId, router, refreshKey, isLoading, song]);
 
   // 更新当前歌词索引
   useEffect(() => {
@@ -214,6 +217,19 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
     }
   };
 
+  // 显示加载状态
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-red-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent"></div>
+          <p className="mt-4 text-gray-700">加载歌曲中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 歌曲不存在时重定向（由 useEffect 处理）
   if (!song) {
     return null;
   }
