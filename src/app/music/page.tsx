@@ -2,10 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { musicList, Music } from '@/lib/musicData';
+import { albums, Album } from '@/lib/musicData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, LogOut, User, Music as MusicIcon } from 'lucide-react';
+import { Disc, LogOut, User, Music as MusicIcon } from 'lucide-react';
 
 export default function MusicListPage() {
   const { user, logout } = useAuth();
@@ -16,8 +16,8 @@ export default function MusicListPage() {
     router.push('/login');
   };
 
-  const handleMusicClick = (music: Music) => {
-    router.push(`/music/${music.id}`);
+  const handleAlbumClick = (album: Album) => {
+    router.push(`/album/${album.id}`);
   };
 
   return (
@@ -55,36 +55,36 @@ export default function MusicListPage() {
       {/* 主要内容区域 */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">音乐列表</h2>
-          <p className="text-gray-600 mt-2">共 {musicList.length} 首歌曲</p>
+          <h2 className="text-3xl font-bold text-gray-900">专辑列表</h2>
+          <p className="text-gray-600 mt-2">共 {albums.length} 张专辑</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {musicList.map((music) => (
+          {albums.map((album) => (
             <Card
-              key={music.id}
+              key={album.id}
               className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
-              onClick={() => handleMusicClick(music)}
+              onClick={() => handleAlbumClick(album)}
             >
               <div className="relative aspect-square overflow-hidden">
                 <img
-                  src={music.coverUrl}
-                  alt={music.title}
+                  src={album.coverUrl}
+                  alt={album.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <div className="p-4 bg-white/90 rounded-full transform scale-0 group-hover:scale-100 transition-transform duration-300">
-                    <Play className="w-8 h-8 text-purple-600 fill-purple-600" />
+                    <Disc className="w-8 h-8 text-purple-600" />
                   </div>
                 </div>
               </div>
 
               <CardContent className="p-4">
-                <h3 className="font-bold text-lg text-gray-900 truncate">{music.title}</h3>
-                <p className="text-gray-600 mt-1 truncate">{music.artist}</p>
+                <h3 className="font-bold text-lg text-gray-900 truncate">{album.title}</h3>
+                <p className="text-gray-600 mt-1 truncate">{album.artist}</p>
                 <div className="flex items-center justify-between mt-2 text-sm text-gray-500">
-                  <span className="truncate">{music.album}</span>
-                  <span>{music.duration}</span>
+                  <span className="truncate">{album.year}</span>
+                  <span>{album.songs.length} 首歌曲</span>
                 </div>
               </CardContent>
             </Card>

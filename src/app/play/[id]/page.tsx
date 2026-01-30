@@ -3,14 +3,14 @@
 import { useState, useRef, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { musicList, Music } from '@/lib/musicData';
+import { getSongById, getAllSongs } from '@/lib/musicData';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Play, Pause, Volume2, SkipBack, SkipForward, User, LogOut, Music as MusicIcon } from 'lucide-react';
 
-export default function MusicDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function PlayPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const musicId = resolvedParams.id;
+  const songId = resolvedParams.id;
   const { user, logout } = useAuth();
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -19,13 +19,14 @@ export default function MusicDetailPage({ params }: { params: Promise<{ id: stri
   const [volume, setVolume] = useState(1);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const music = musicList.find((m) => m.id === musicId);
+  const song = getSongById(songId);
+  const allSongs = getAllSongs();
 
   useEffect(() => {
-    if (!music) {
+    if (!song) {
       router.push('/music');
     }
-  }, [music, router]);
+  }, [song, router]);
 
   const handleLogout = () => {
     logout();
@@ -79,18 +80,28 @@ export default function MusicDetailPage({ params }: { params: Promise<{ id: stri
   };
 
   const playNext = () => {
-    const currentIndex = musicList.findIndex((m) => m.id === musicId);
-    const nextIndex = (currentIndex + 1) % musicList.length;
-    router.push(`/music/${musicList[nextIndex].id}`);
+    const currentIndex = allSongs.findIndex((s) => s.id === songId);
+    if (currentIndex !== -1) {
+      const nextIndex = (currentIndex + 1) % allSongs.length;
+      router.push(`/play/${allSongs[nextIndex].id}`);
+    }
   };
 
   const playPrevious = () => {
-    const currentIndex = musicList.findIndex((m) => m.id === musicId);
-    const prevIndex = currentIndex === 0 ? musicList.length - 1 : currentIndex - 1;
-    router.push(`/music/${musicList[prevIndex].id}`);
+    const currentIndex = allSongs.findIndex((s) => s.id === songId);
+    if (currentIndex !== -1) {
+      const prevIndex = currentIndex === 0 ? allSongs.length - 1 : currentIndex - 1;
+      router.push(`/play/${allSongs[prevIndex].id}`);
+    }
   };
 
-  if (!music) {
+  const handleBackToAlbum = () => {
+    if (song) {
+      router.push(`/album/${song.albumId}`);
+    }
+  };
+
+  if (!song) {
     return null;
   }
 
@@ -131,11 +142,11 @@ export default function MusicDetailPage({ params }: { params: Promise<{ id: stri
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => router.push('/music')}
+            onClick={handleBackToAlbum}
             className="text-gray-700 hover:text-purple-600"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            返回列表
+            返回专辑
           </Button>
         </div>
 
@@ -145,8 +156,8 @@ export default function MusicDetailPage({ params }: { params: Promise<{ id: stri
               {/* 专辑封面 */}
               <div className="flex items-center justify-center">
                 <img
-                  src={music.coverUrl}
-                  alt={music.title}
+                  src={song.coverUrl}
+                  alt={song.title}
                   className="w-full max-w-md aspect-square object-cover rounded-2xl shadow-lg"
                 />
               </div>
@@ -154,15 +165,15 @@ export default function MusicDetailPage({ params }: { params: Promise<{ id: stri
               {/* 播放器控制 */}
               <div className="flex flex-col justify-center space-y-6">
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-900">{music.title}</h2>
-                  <p className="text-xl text-gray-600 mt-2">{music.artist}</p>
-                  <p className="text-gray-500 mt-1">{music.album}</p>
+                  <h2 className="text-3xl font-bold text-gray-900">{song.title}</h2>
+                  <p className="text-xl text-gray-600 mt-2">{song.artist}</p>
+                  <p className="text-gray-500 mt-1">{song.albumTitle}</p>
                 </div>
 
                 {/* 音频元素 */}
                 <audio
                   ref={audioRef}
-                  src={music.audioUrl}
+                  src={song.audioUrl}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onEnded={() => {
