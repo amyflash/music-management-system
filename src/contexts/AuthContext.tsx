@@ -4,8 +4,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 // 写死的用户信息
 const USER = {
-  username: 'admin',
-  password: 'admin',
+  username: 'harrietlq',
+  password: '1q2w3e4r',
   name: '音乐管理员'
 };
 

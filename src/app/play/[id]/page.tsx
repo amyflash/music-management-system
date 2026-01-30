@@ -6,7 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getSongById, getAllSongs } from '@/lib/musicData';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Play, Pause, Volume2, SkipBack, SkipForward, User, LogOut, Music as MusicIcon } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ArrowLeft, Play, Pause, Volume2, SkipBack, SkipForward, User, LogOut, Music as MusicIcon, FileText } from 'lucide-react';
 
 export default function PlayPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -150,7 +151,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
           </Button>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto space-y-6">
           <Card className="overflow-hidden bg-white/95 backdrop-blur-sm shadow-2xl">
             <div className="grid md:grid-cols-2 gap-8 p-8">
               {/* 专辑封面 */}
@@ -247,6 +248,25 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
               </div>
             </div>
           </Card>
+
+          {/* 歌词卡片 */}
+          {song.lyrics && (
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-lg font-bold text-gray-900">歌词</h3>
+                </div>
+                <ScrollArea className="h-96">
+                  <div className="pr-4">
+                    <pre className="whitespace-pre-wrap text-gray-700 leading-relaxed font-sans text-base">
+                      {song.lyrics}
+                    </pre>
+                  </div>
+                </ScrollArea>
+              </div>
+            </Card>
+          )}
         </div>
       </main>
     </div>
