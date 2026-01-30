@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
 import { Upload, Loader2 } from 'lucide-react';
 
 interface UploadMusicDialogProps {
@@ -33,17 +34,21 @@ export interface UploadFormData {
 }
 
 // 上传文件到服务器
-async function uploadFile(file: File): Promise<string> {
+async function uploadFile(file: File, token: string): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
 
   const response = await fetch('/api/upload', {
     method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
     body: formData,
   });
 
   if (!response.ok) {
-    throw new Error('文件上传失败');
+    const error = await response.json();
+    throw new Error(error.error || '文件上传失败');
   }
 
   const result = await response.json();
@@ -51,6 +56,7 @@ async function uploadFile(file: File): Promise<string> {
 }
 
 export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicDialogProps) {
+  const { token } = useAuth();
   const [formData, setFormData] = useState<UploadFormData>({
     albumTitle: '',
     artist: '',
@@ -62,6 +68,14 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
     year: new Date().getFullYear().toString(),
   });
   const [isUploading, setIsUploading] = useState(false);
+
+  // 检查是否已登录
+  useEffect(() => {
+    if (open && !token) {
+      alert('请先登录');
+      onOpenChange(false);
+    }
+  }, [open, token, onOpenChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,13 +91,13 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
       // 上传音频文件
       let audioUrl = formData.audioUrl;
       if (formData.audioFile) {
-        audioUrl = await uploadFile(formData.audioFile);
+        audioUrl = await uploadFile(formData.audioFile, token || '');
       }
 
       // 上传封面文件
       let coverUrl = formData.coverUrl;
       if (formData.coverFile) {
-        coverUrl = await uploadFile(formData.coverFile);
+        coverUrl = await uploadFile(formData.coverFile, token || '');
       }
 
       // 构建完整数据
