@@ -24,7 +24,9 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const [currentLyricIndex, setCurrentLyricIndex] = useState(-1);
   const audioRef = useRef<HTMLAudioElement>(null);
   const lyricContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const lyricItemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const song = useMemo(() => getSongById(songId), [songId, refreshKey]);
   const allSongs = useMemo(() => getAllSongs(), [refreshKey]);
@@ -35,6 +37,8 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
       const parsedLyrics = parseLRC(song.lyrics);
       setLyrics(parsedLyrics);
       setCurrentLyricIndex(-1);
+      // 清空歌词 refs 数组
+      lyricItemRefs.current = [];
     }
   }, [song?.lyrics, refreshKey]);
 
@@ -49,18 +53,32 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   useEffect(() => {
     if (lyrics.length > 0) {
       const newIndex = getCurrentLyricIndex(lyrics, currentTime);
+      // console.log('歌词更新:', { currentTime, newIndex, lyricsLength: lyrics.length, currentLyricText: lyrics[newIndex]?.text });
       setCurrentLyricIndex(newIndex);
     }
   }, [currentTime, lyrics]);
 
   // 自动滚动到当前歌词
   useEffect(() => {
-    if (currentLyricIndex >= 0 && lyricContainerRef.current) {
-      const activeElement = lyricContainerRef.current.children[currentLyricIndex];
-      if (activeElement) {
-        activeElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
+    if (currentLyricIndex >= 0 && lyricItemRefs.current[currentLyricIndex] && scrollContainerRef.current) {
+      const activeElement = lyricItemRefs.current[currentLyricIndex];
+      if (activeElement && scrollContainerRef.current) {
+        // 使用 getBoundingClientRect 计算精确位置
+        const containerRect = scrollContainerRef.current.getBoundingClientRect();
+        const elementRect = activeElement.getBoundingClientRect();
+
+        // 计算元素顶部相对于容器顶部的距离
+        const relativeTop = elementRect.top - containerRect.top + scrollContainerRef.current.scrollTop;
+
+        // 计算滚动位置，使元素居中
+        const containerHeight = containerRect.height;
+        const elementHeight = elementRect.height;
+        const scrollTop = relativeTop - (containerHeight / 2) + (elementHeight / 2);
+
+        // 执行滚动
+        scrollContainerRef.current.scrollTo({
+          top: Math.max(0, scrollTop),
+          behavior: 'smooth'
         });
       }
     }
@@ -321,13 +339,16 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                     </span>
                   )}
                 </div>
-                <div className="h-96 overflow-y-auto">
-                  <div className="pr-4" ref={lyricContainerRef}>
+                <div ref={scrollContainerRef} className="h-96 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50/50">
+                  <div className="py-4">
                     {lyrics.map((line, index) => (
                       <div
                         key={index}
+                        ref={(el) => {
+                          lyricItemRefs.current[index] = el;
+                        }}
                         onClick={() => handleLyricClick(line.time)}
-                        className={`py-2 px-4 rounded-lg cursor-pointer transition-all duration-300 ${
+                        className={`py-2 px-4 rounded-lg cursor-pointer transition-all duration-300 mb-2 ${
                           index === currentLyricIndex
                             ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg scale-105 shadow-lg'
                             : 'text-gray-700 hover:bg-purple-50 text-base'
