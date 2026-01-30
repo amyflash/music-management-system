@@ -348,7 +348,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                           lyricItemRefs.current[index] = el;
                         }}
                         onClick={() => handleLyricClick(line.time)}
-                        className={`py-2 px-4 rounded-lg cursor-pointer transition-all duration-300 mb-2 ${
+                        className={`block py-3 px-4 rounded-lg cursor-pointer transition-all duration-300 mb-3 leading-relaxed ${
                           index === currentLyricIndex
                             ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg scale-105 shadow-lg'
                             : 'text-gray-700 hover:bg-purple-50 text-base'
