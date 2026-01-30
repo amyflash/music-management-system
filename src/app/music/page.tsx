@@ -7,6 +7,7 @@ import { albums as staticAlbums, Album } from '@/lib/musicData';
 import { getMergedAlbums, createAlbum, createSong, deleteAlbum, isUserUploadedAlbum } from '@/lib/storageManager';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
 import {
   AlertDialog,
@@ -18,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Disc, LogOut, User, Music as MusicIcon, Upload as UploadIcon, Trash2 } from 'lucide-react';
+import { Disc, LogOut, User, Music as MusicIcon, Upload as UploadIcon, Trash2, Search } from 'lucide-react';
 
 export default function MusicListPage() {
   const { user, logout } = useAuth();
@@ -28,6 +29,8 @@ export default function MusicListPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [albumToDelete, setAlbumToDelete] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredAlbums, setFilteredAlbums] = useState<Album[]>([]);
 
   // 加载专辑数据
   useEffect(() => {
@@ -37,6 +40,20 @@ export default function MusicListPage() {
     };
     loadAlbums();
   }, [refreshKey]);
+
+  // 搜索过滤
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredAlbums(albums);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = albums.filter(album =>
+        album.title.toLowerCase().includes(query) ||
+        album.artist.toLowerCase().includes(query)
+      );
+      setFilteredAlbums(filtered);
+    }
+  }, [searchQuery, albums]);
 
   const handleLogout = () => {
     logout();
@@ -132,13 +149,32 @@ export default function MusicListPage() {
 
       {/* 主要内容区域 */}
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* 搜索框 */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="搜索专辑或歌手..."
+              value={searchQuery}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2"
+            />
+          </div>
+        </div>
+
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">专辑列表</h2>
-          <p className="text-gray-600 mt-2">共 {albums.length} 张专辑</p>
+          <h2 className="text-3xl font-bold text-gray-900">
+            专辑列表
+            {searchQuery && ` (${filteredAlbums.length} 个结果)`}
+          </h2>
+          <p className="text-gray-600 mt-2">
+            {searchQuery ? `搜索 "${searchQuery}"` : `共 ${albums.length} 张专辑`}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {albums.map((album) => (
+          {filteredAlbums.map((album) => (
             <Card
               key={album.id}
               className="group overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
@@ -181,6 +217,17 @@ export default function MusicListPage() {
               </CardContent>
             </Card>
           ))}
+
+          {/* 无搜索结果提示 */}
+          {filteredAlbums.length === 0 && searchQuery && (
+            <div className="col-span-full py-16 text-center">
+              <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">未找到相关专辑</h3>
+              <p className="text-gray-500">
+                尝试使用其他关键词搜索
+              </p>
+            </div>
+          )}
         </div>
       </main>
 

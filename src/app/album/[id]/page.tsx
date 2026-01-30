@@ -7,6 +7,7 @@ import { albums as staticAlbums, Album } from '@/lib/musicData';
 import { getAlbumById, createSong, deleteSong, updateSong, updateAlbum, isUserUploadedSong } from '@/lib/storageManager';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
 import { EditAlbumDialog } from '@/components/edit-album-dialog';
 import { EditSongDialog } from '@/components/edit-song-dialog';
@@ -20,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Play, LogOut, User, Music as MusicIcon, Disc, Upload as UploadIcon, Trash2, Edit2 } from 'lucide-react';
+import { ArrowLeft, Play, LogOut, User, Music as MusicIcon, Disc, Upload as UploadIcon, Trash2, Edit2, Search } from 'lucide-react';
 
 export default function AlbumDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -35,6 +36,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
   const [editAlbumDialogOpen, setEditAlbumDialogOpen] = useState(false);
   const [editSongDialogOpen, setEditSongDialogOpen] = useState(false);
   const [songToEdit, setSongToEdit] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // 加载专辑详情
   useEffect(() => {
@@ -136,6 +138,11 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     // 触发重新加载专辑数据
     setRefreshKey((prev) => prev + 1);
   };
+
+  // 过滤歌曲
+  const filteredSongs = album?.songs.filter(song =>
+    song.title.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   if (!album) {
     return (
@@ -242,8 +249,22 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
 
           {/* 歌曲列表 */}
           <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+            {/* 搜索框 */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="搜索歌曲..."
+                  value={searchQuery}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-2"
+                />
+              </div>
+            </div>
+
             <div className="divide-y">
-              {album.songs.map((song, index) => (
+              {filteredSongs.map((song, index) => (
                 <div
                   key={song.id}
                   className="flex items-center gap-4 p-4 hover:bg-purple-50 transition-colors group"
@@ -295,6 +316,14 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                   </div>
                 </div>
               ))}
+
+              {/* 无搜索结果提示 */}
+              {filteredSongs.length === 0 && searchQuery && (
+                <div className="py-12 text-center">
+                  <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">未找到相关歌曲</p>
+                </div>
+              )}
             </div>
           </Card>
         </div>
