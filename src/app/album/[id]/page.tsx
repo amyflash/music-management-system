@@ -8,6 +8,8 @@ import { getMergedAlbums, addUploadedSong, deleteSong, isUserUploadedSong } from
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
+import { EditAlbumDialog } from '@/components/edit-album-dialog';
+import { EditSongDialog } from '@/components/edit-song-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Play, LogOut, User, Music as MusicIcon, Disc, Upload as UploadIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, Play, LogOut, User, Music as MusicIcon, Disc, Upload as UploadIcon, Trash2, Edit2 } from 'lucide-react';
 
 export default function AlbumDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -30,6 +32,9 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
   const [refreshKey, setRefreshKey] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [songToDelete, setSongToDelete] = useState<string | null>(null);
+  const [editAlbumDialogOpen, setEditAlbumDialogOpen] = useState(false);
+  const [editSongDialogOpen, setEditSongDialogOpen] = useState(false);
+  const [songToEdit, setSongToEdit] = useState<string | null>(null);
 
   const album = albums.find((a) => a.id === albumId);
 
@@ -74,6 +79,48 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     setDeleteDialogOpen(false);
   };
 
+  const handleEditAlbum = () => {
+    setEditAlbumDialogOpen(true);
+  };
+
+  const handleEditSong = (songId: string) => {
+    setSongToEdit(songId);
+    setEditSongDialogOpen(true);
+  };
+
+  const handleSaveAlbum = (data: {
+    title: string;
+    artist: string;
+    year: string;
+    coverUrl?: string;
+  }) => {
+    if (album) {
+      // 将专辑数据更新为完整的Album类型
+      const updatedAlbum: Album = {
+        ...album,
+        title: data.title,
+        artist: data.artist,
+        year: data.year,
+        coverUrl: data.coverUrl || album.coverUrl,
+      };
+      setEditAlbumDialogOpen(false);
+      // 触发重新加载专辑数据
+      setRefreshKey((prev) => prev + 1);
+    }
+  };
+
+  const handleSaveSong = (data: {
+    title: string;
+    duration: string;
+    audioUrl?: string;
+    lyricsUrl?: string;
+  }) => {
+    setEditSongDialogOpen(false);
+    setSongToEdit(null);
+    // 触发重新加载专辑数据
+    setRefreshKey((prev) => prev + 1);
+  };
+
   if (!album) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-red-50 flex items-center justify-center">
@@ -107,7 +154,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
             >
               <UploadIcon className="w-4 h-4 mr-2" />
-              上传音乐
+              添加歌曲
             </Button>
             <div className="flex items-center space-x-2 text-gray-700">
               <User className="w-5 h-5" />
@@ -128,7 +175,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
 
       {/* 主要内容区域 */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
+        <div className="mb-4 flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={() => router.push('/music')}
@@ -137,6 +184,23 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
             <ArrowLeft className="w-4 h-4 mr-2" />
             返回专辑列表
           </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleEditAlbum}
+              variant="outline"
+              className="border-purple-600 text-purple-600 hover:bg-purple-50"
+            >
+              <Edit2 className="w-4 h-4 mr-2" />
+              编辑专辑
+            </Button>
+            <Button
+              onClick={() => setUploadDialogOpen(true)}
+              className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white"
+            >
+              <UploadIcon className="w-4 h-4 mr-2" />
+              添加歌曲
+            </Button>
+          </div>
         </div>
 
         <div className="max-w-4xl mx-auto">
@@ -182,22 +246,35 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                       <h3 className="font-medium text-gray-900 truncate">{song.title}</h3>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
                     <div className="text-sm text-gray-500 w-16 text-right">
                       {song.duration}
                     </div>
                     {isUserUploadedSong(song.id) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteSong(song.id);
-                        }}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditSong(song.id);
+                          }}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSong(song.id);
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -212,6 +289,11 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         onUpload={handleUpload}
+        presetAlbum={album ? {
+          title: album.title,
+          artist: album.artist,
+          year: album.year,
+        } : undefined}
       />
 
       {/* 删除确认对话框 */}
@@ -234,6 +316,31 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 编辑专辑对话框 */}
+      {album && (
+        <EditAlbumDialog
+          albumData={{
+            title: album.title,
+            artist: album.artist,
+            year: album.year,
+            coverUrl: album.coverUrl,
+          }}
+          open={editAlbumDialogOpen}
+          onOpenChange={setEditAlbumDialogOpen}
+          onSave={handleSaveAlbum}
+        />
+      )}
+
+      {/* 编辑歌曲对话框 */}
+      {songToEdit && album && (
+        <EditSongDialog
+          songData={album.songs.find((s) => s.id === songToEdit)}
+          open={editSongDialogOpen}
+          onOpenChange={setEditSongDialogOpen}
+          onSave={handleSaveSong}
+        />
+      )}
     </div>
   );
 }

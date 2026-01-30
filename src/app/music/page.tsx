@@ -91,7 +91,7 @@ export default function MusicListPage() {
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
             >
               <UploadIcon className="w-4 h-4 mr-2" />
-              上传音乐
+              创建专辑
             </Button>
             <div className="flex items-center space-x-2 text-gray-700">
               <User className="w-5 h-5" />

@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { Upload, Loader2 } from 'lucide-react';
 
@@ -18,6 +19,12 @@ interface UploadMusicDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpload?: (data: UploadFormData) => void;
+  // 预置的专辑信息（可选，用于添加歌曲到指定专辑）
+  presetAlbum?: {
+    title: string;
+    artist: string;
+    year: string;
+  };
 }
 
 export interface UploadFormData {
@@ -56,7 +63,7 @@ async function uploadFile(file: File, token: string): Promise<string> {
   return result.url;
 }
 
-export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicDialogProps) {
+export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }: UploadMusicDialogProps) {
   const { token } = useAuth();
   const [formData, setFormData] = useState<UploadFormData>({
     albumTitle: '',
@@ -68,6 +75,18 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
     year: new Date().getFullYear().toString(),
   });
   const [isUploading, setIsUploading] = useState(false);
+
+  // 当对话框打开且有预设专辑信息时，初始化表单
+  useEffect(() => {
+    if (open && presetAlbum) {
+      setFormData(prev => ({
+        ...prev,
+        albumTitle: presetAlbum.title,
+        artist: presetAlbum.artist,
+        year: presetAlbum.year,
+      }));
+    }
+  }, [open, presetAlbum]);
 
   // 检查是否已登录
   useEffect(() => {
@@ -151,41 +170,67 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 专辑信息 */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">专辑信息</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="albumTitle">专辑名称 *</Label>
-                <Input
-                  id="albumTitle"
-                  value={formData.albumTitle}
-                  onChange={(e) => setFormData({ ...formData, albumTitle: e.target.value })}
-                  placeholder="例如：Imagine"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="year">发行年份</Label>
-                <Input
-                  id="year"
-                  type="number"
-                  value={formData.year}
-                  onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                  placeholder="2024"
-                />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="artist">歌手 *</Label>
-                <Input
-                  id="artist"
-                  value={formData.artist}
-                  onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-                  placeholder="例如：John Lennon"
-                  required
-                />
+          {presetAlbum ? (
+            // 预置专辑信息，只显示不可编辑
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">专辑信息</h3>
+              <Card className="bg-purple-50 border-purple-200">
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">专辑名称：</span>
+                      <span className="font-medium ml-2">{presetAlbum.title}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">歌手：</span>
+                      <span className="font-medium ml-2">{presetAlbum.artist}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">发行年份：</span>
+                      <span className="font-medium ml-2">{presetAlbum.year}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            // 新建专辑，可编辑
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">专辑信息</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="albumTitle">专辑名称 *</Label>
+                  <Input
+                    id="albumTitle"
+                    value={formData.albumTitle}
+                    onChange={(e) => setFormData({ ...formData, albumTitle: e.target.value })}
+                    placeholder="例如：Imagine"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="year">发行年份</Label>
+                  <Input
+                    id="year"
+                    type="number"
+                    value={formData.year}
+                    onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                    placeholder="2024"
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="artist">歌手 *</Label>
+                  <Input
+                    id="artist"
+                    value={formData.artist}
+                    onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
+                    placeholder="例如：John Lennon"
+                    required
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* 歌曲信息 */}
           <div className="space-y-4">

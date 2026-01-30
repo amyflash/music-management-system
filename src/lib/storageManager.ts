@@ -226,3 +226,94 @@ export function deleteAlbum(albumId: string): boolean {
 
   return false;
 }
+
+// 更新专辑信息
+export function updateAlbum(albumId: string, albumData: {
+  title?: string;
+  artist?: string;
+  year?: string;
+  coverUrl?: string;
+}): boolean {
+  const userData = getUserData();
+
+  if (!userData.albums[albumId]) {
+    return false;
+  }
+
+  // 更新专辑信息
+  if (albumData.title !== undefined) {
+    userData.albums[albumId].title = albumData.title;
+  }
+  if (albumData.artist !== undefined) {
+    userData.albums[albumId].artist = albumData.artist;
+  }
+  if (albumData.year !== undefined) {
+    userData.albums[albumId].year = albumData.year;
+  }
+  if (albumData.coverUrl !== undefined) {
+    userData.albums[albumId].coverUrl = albumData.coverUrl;
+  }
+
+  saveUserData(userData);
+  return true;
+}
+
+// 更新歌曲信息
+export function updateSong(songId: string, songData: {
+  title?: string;
+  duration?: string;
+  audioUrl?: string;
+  lyricsUrl?: string;
+}): boolean {
+  const userData = getUserData();
+
+  for (const albumId in userData.albums) {
+    const songIndex = userData.albums[albumId].songs.findIndex((song) => song.id === songId);
+
+    if (songIndex !== -1) {
+      // 更新歌曲信息
+      if (songData.title !== undefined) {
+        userData.albums[albumId].songs[songIndex].title = songData.title;
+      }
+      if (songData.duration !== undefined) {
+        userData.albums[albumId].songs[songIndex].duration = songData.duration;
+      }
+      if (songData.audioUrl !== undefined) {
+        userData.albums[albumId].songs[songIndex].audioUrl = songData.audioUrl;
+      }
+      if (songData.lyricsUrl !== undefined) {
+        userData.albums[albumId].songs[songIndex].lyricsUrl = songData.lyricsUrl;
+      }
+
+      saveUserData(userData);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// 获取专辑信息（仅用户上传的专辑）
+export function getUserAlbumById(albumId: string): UserData['albums'][string] | null {
+  const userData = getUserData();
+  return userData.albums[albumId] || null;
+}
+
+// 获取歌曲信息（仅用户上传的歌曲）
+export function getUserSongById(songId: string): { song: Song, albumId: string, index: number } | null {
+  const userData = getUserData();
+
+  for (const albumId in userData.albums) {
+    const songIndex = userData.albums[albumId].songs.findIndex((song) => song.id === songId);
+
+    if (songIndex !== -1) {
+      return {
+        song: userData.albums[albumId].songs[songIndex],
+        albumId,
+        index: songIndex,
+      };
+    }
+  }
+
+  return null;
+}
