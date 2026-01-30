@@ -164,7 +164,7 @@ export default function MusicListPage() {
                     <p className="text-gray-600 mt-1 truncate">{album.artist}</p>
                     <div className="flex items-center justify-between mt-2 text-sm text-gray-500">
                       <span className="truncate">{album.year}</span>
-                      <span>{album.songs.length} 首歌曲</span>
+                      <span>{album.songs?.length || 0} 首歌曲</span>
                     </div>
                   </div>
                   {isUserUploadedAlbum() && (
