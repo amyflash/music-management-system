@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { albums, Album } from '@/lib/musicData';
+import { albums as staticAlbums, Album } from '@/lib/musicData';
+import { getMergedAlbums, addUploadedSong } from '@/lib/storageManager';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { UploadMusicDialog } from '@/components/upload-music-dialog';
+import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
 import { ArrowLeft, Play, LogOut, User, Music as MusicIcon, Disc, Upload as UploadIcon } from 'lucide-react';
 
 export default function AlbumDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -15,8 +16,15 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
   const { user, logout } = useAuth();
   const router = useRouter();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const album = albums.find((a) => a.id === albumId);
+
+  // 加载合并后的专辑数据
+  useEffect(() => {
+    setAlbums(getMergedAlbums());
+  }, [refreshKey]);
 
   const handleLogout = () => {
     logout();
@@ -25,6 +33,13 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
 
   const handleSongClick = (songId: string) => {
     router.push(`/play/${songId}`);
+  };
+
+  const handleUpload = (uploadData: UploadFormData) => {
+    // 保存上传的数据到 localStorage
+    addUploadedSong(uploadData);
+    // 触发重新加载专辑数据
+    setRefreshKey((prev) => prev + 1);
   };
 
   if (!album) {
@@ -145,6 +160,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
       <UploadMusicDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
+        onUpload={handleUpload}
       />
     </div>
   );

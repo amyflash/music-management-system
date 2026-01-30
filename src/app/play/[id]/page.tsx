@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getSongById, getAllSongs } from '@/lib/musicData';
+import { getSongById, getAllSongs } from '@/lib/storageManager';
 import { parseLRC, getCurrentLyricIndex, type LyricLine } from '@/lib/lrcParser';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { UploadMusicDialog } from '@/components/upload-music-dialog';
+import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
 import { ArrowLeft, Play, Pause, Volume2, SkipBack, SkipForward, User, LogOut, Music as MusicIcon, FileText, Upload as UploadIcon } from 'lucide-react';
 
 export default function PlayPage({ params }: { params: Promise<{ id: string }> }) {
@@ -25,6 +25,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const [currentLyricIndex, setCurrentLyricIndex] = useState(-1);
   const audioRef = useRef<HTMLAudioElement>(null);
   const lyricContainerRef = useRef<HTMLDivElement>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const song = getSongById(songId);
   const allSongs = getAllSongs();
@@ -36,7 +37,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
       setLyrics(parsedLyrics);
       setCurrentLyricIndex(-1);
     }
-  }, [song]);
+  }, [song, refreshKey]);
 
   useEffect(() => {
     if (!song) {
@@ -68,6 +69,14 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const handleLogout = () => {
     logout();
     router.push('/login');
+  };
+
+  const handleUpload = (uploadData: UploadFormData) => {
+    // 保存上传的数据到 localStorage
+    const { addUploadedSong } = require('@/lib/storageManager');
+    addUploadedSong(uploadData);
+    // 触发重新加载歌曲数据
+    setRefreshKey((prev) => prev + 1);
   };
 
   const togglePlayPause = () => {
@@ -339,6 +348,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
       <UploadMusicDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
+        onUpload={handleUpload}
       />
     </div>
   );

@@ -1,18 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { albums, Album } from '@/lib/musicData';
+import { albums as staticAlbums, Album } from '@/lib/musicData';
+import { getMergedAlbums, addUploadedSong } from '@/lib/storageManager';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UploadMusicDialog } from '@/components/upload-music-dialog';
+import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
 import { Disc, LogOut, User, Music as MusicIcon, Upload as UploadIcon } from 'lucide-react';
 
 export default function MusicListPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // 加载合并后的专辑数据
+  useEffect(() => {
+    setAlbums(getMergedAlbums());
+  }, [refreshKey]);
 
   const handleLogout = () => {
     logout();
@@ -21,6 +29,13 @@ export default function MusicListPage() {
 
   const handleAlbumClick = (album: Album) => {
     router.push(`/album/${album.id}`);
+  };
+
+  const handleUpload = (uploadData: UploadFormData) => {
+    // 保存上传的数据到 localStorage
+    addUploadedSong(uploadData);
+    // 触发重新加载专辑数据
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -106,6 +121,7 @@ export default function MusicListPage() {
       <UploadMusicDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
+        onUpload={handleUpload}
       />
     </div>
   );
