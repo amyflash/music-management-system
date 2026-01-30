@@ -72,3 +72,16 @@ export function lyricsToLRC(lyrics: LyricLine[]): string {
     return `[${timeStr}]${line.text}`;
   }).join('\n');
 }
+
+/**
+ * 从 URL 加载歌词文本
+ * @param lyricsUrl 歌词文件的 URL
+ * @returns 歌词文本内容
+ */
+export async function loadLyricsFromUrl(lyricsUrl: string): Promise<string> {
+  const response = await fetch(lyricsUrl);
+  if (!response.ok) {
+    throw new Error('加载歌词失败');
+  }
+  return await response.text();
+}

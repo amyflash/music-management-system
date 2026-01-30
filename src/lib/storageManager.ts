@@ -76,7 +76,7 @@ export function addUploadedSong(uploadData: UploadFormData): void {
     title: uploadData.songTitle,
     duration: uploadData.duration || '',
     audioUrl: uploadData.audioUrl || '',
-    lyrics: uploadData.lyrics,
+    lyricsUrl: uploadData.lyricsUrl,
   });
 
   // 保存到 localStorage

@@ -29,7 +29,8 @@ export interface UploadFormData {
   audioUrl?: string;  // 上传后的 URL
   coverFile: File | null;
   coverUrl?: string;  // 上传后的 URL
-  lyrics?: string;
+  lyricsFile?: File | null;  // LRC 文件
+  lyricsUrl?: string;  // 上传后的 LRC 文件 URL
   year: string;
 }
 
@@ -64,7 +65,6 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
     duration: '',
     audioFile: null,
     coverFile: null,
-    lyrics: '',
     year: new Date().getFullYear().toString(),
   });
   const [isUploading, setIsUploading] = useState(false);
@@ -100,11 +100,18 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
         coverUrl = await uploadFile(formData.coverFile, token || '');
       }
 
+      // 上传 LRC 歌词文件
+      let lyricsUrl = formData.lyricsUrl;
+      if (formData.lyricsFile) {
+        lyricsUrl = await uploadFile(formData.lyricsFile, token || '');
+      }
+
       // 构建完整数据
       const uploadData = {
         ...formData,
         audioUrl,
         coverUrl,
+        lyricsUrl,
       };
 
       if (onUpload) {
@@ -119,7 +126,6 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
         duration: '',
         audioFile: null,
         coverFile: null,
-        lyrics: '',
         year: new Date().getFullYear().toString(),
       });
 
@@ -229,18 +235,11 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
                   type="file"
                   accept=".lrc"
                   onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (e) => {
-                        setFormData({ ...formData, lyrics: e.target?.result as string });
-                      };
-                      reader.readAsText(file);
-                    }
+                    setFormData({ ...formData, lyricsFile: e.target.files?.[0] || undefined });
                   }}
                 />
-                {formData.lyrics && (
-                  <p className="text-sm text-green-600">✓ 已加载歌词文件</p>
+                {formData.lyricsFile && (
+                  <p className="text-sm text-green-600">✓ 已选择歌词文件: {formData.lyricsFile.name}</p>
                 )}
               </div>
             </div>

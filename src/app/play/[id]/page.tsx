@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSongById, getAllSongs } from '@/lib/storageManager';
-import { parseLRC, getCurrentLyricIndex, type LyricLine } from '@/lib/lrcParser';
+import { parseLRC, getCurrentLyricIndex, type LyricLine, loadLyricsFromUrl } from '@/lib/lrcParser';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
@@ -33,14 +33,37 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
 
   // 解析 LRC 歌词
   useEffect(() => {
-    if (song?.lyrics) {
-      const parsedLyrics = parseLRC(song.lyrics);
-      setLyrics(parsedLyrics);
-      setCurrentLyricIndex(-1);
-      // 清空歌词 refs 数组
-      lyricItemRefs.current = [];
-    }
-  }, [song?.lyrics, refreshKey]);
+    const loadLyrics = async () => {
+      if (!song) return;
+
+      let lyricsText: string | undefined;
+
+      // 优先使用歌词 URL（用户上传的数据）
+      if (song.lyricsUrl) {
+        try {
+          lyricsText = await loadLyricsFromUrl(song.lyricsUrl);
+        } catch (error) {
+          console.error('加载歌词失败:', error);
+        }
+      } else {
+        // 使用歌词文本（静态数据）
+        lyricsText = song.lyrics;
+      }
+
+      if (lyricsText) {
+        const parsedLyrics = parseLRC(lyricsText);
+        setLyrics(parsedLyrics);
+        setCurrentLyricIndex(-1);
+        // 清空歌词 refs 数组
+        lyricItemRefs.current = [];
+      } else {
+        setLyrics([]);
+        setCurrentLyricIndex(-1);
+      }
+    };
+
+    loadLyrics();
+  }, [song?.lyrics, song?.lyricsUrl, refreshKey]);
 
   // 如果歌曲不存在，重定向到专辑列表
   useEffect(() => {

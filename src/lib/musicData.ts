@@ -3,7 +3,8 @@ export interface Song {
   title: string;
   duration: string;
   audioUrl: string;
-  lyrics?: string;
+  lyrics?: string;  // 歌词文本（用于静态数据）
+  lyricsUrl?: string;  // 歌词文件 URL（用于用户上传的数据）
 }
 
 export interface Album {
