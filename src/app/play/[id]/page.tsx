@@ -143,6 +143,14 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // 格式化歌词时间戳为 mm:ss.xx 格式
+  const formatLyricTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    const milliseconds = Math.floor((time % 1) * 100);
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(2, '0')}`;
+  };
+
   const playNext = () => {
     const currentIndex = allSongs.findIndex((s) => s.id === songId);
     if (currentIndex !== -1) {
@@ -348,13 +356,18 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                           lyricItemRefs.current[index] = el;
                         }}
                         onClick={() => handleLyricClick(line.time)}
-                        className={`block py-3 px-4 rounded-lg cursor-pointer transition-all duration-300 mb-3 leading-relaxed ${
+                        className={`block py-2 px-4 rounded-lg cursor-pointer transition-all duration-300 mb-2 leading-relaxed ${
                           index === currentLyricIndex
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg scale-105 shadow-lg'
-                            : 'text-gray-700 hover:bg-purple-50 text-base'
+                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold scale-105 shadow-lg'
+                            : 'text-gray-700 hover:bg-purple-50'
                         }`}
                       >
-                        {line.text}
+                        <span className="text-xs opacity-70 mr-3 font-mono">
+                          [{formatLyricTime(line.time)}]
+                        </span>
+                        <span className="text-base">
+                          {line.text}
+                        </span>
                       </div>
                     ))}
                   </div>
