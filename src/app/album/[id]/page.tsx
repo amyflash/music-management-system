@@ -4,7 +4,7 @@ import { useState, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { albums as staticAlbums, Album } from '@/lib/musicData';
-import { getMergedAlbums, addUploadedSong, deleteSong, isUserUploadedSong } from '@/lib/storageManager';
+import { getAlbumById, createSong, deleteSong, updateSong, updateAlbum, isUserUploadedSong } from '@/lib/storageManager';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
@@ -28,7 +28,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
   const { user, logout } = useAuth();
   const router = useRouter();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [albums, setAlbums] = useState<Album[]>([]);
+  const [album, setAlbum] = useState<Album | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [songToDelete, setSongToDelete] = useState<string | null>(null);
@@ -36,12 +36,14 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
   const [editSongDialogOpen, setEditSongDialogOpen] = useState(false);
   const [songToEdit, setSongToEdit] = useState<string | null>(null);
 
-  const album = albums.find((a) => a.id === albumId);
-
-  // 加载合并后的专辑数据
+  // 加载专辑详情
   useEffect(() => {
-    setAlbums(getMergedAlbums());
-  }, [refreshKey]);
+    const loadAlbum = async () => {
+      const data = await getAlbumById(albumId);
+      setAlbum(data);
+    };
+    loadAlbum();
+  }, [albumId, refreshKey]);
 
   const handleLogout = () => {
     logout();
@@ -52,9 +54,17 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     router.push(`/play/${songId}`);
   };
 
-  const handleUpload = (uploadData: UploadFormData) => {
-    // 保存上传的数据到 localStorage
-    addUploadedSong(uploadData);
+  const handleUpload = async (uploadData: UploadFormData) => {
+    if (!album || !uploadData.songAudioUrl) return;
+
+    // 创建歌曲数据到数据库
+    await createSong({
+      albumId: album.id,
+      title: uploadData.songTitle,
+      duration: uploadData.songDuration,
+      audioUrl: uploadData.songAudioUrl,
+      lyricsUrl: uploadData.songLyricsUrl,
+    });
     // 触发重新加载专辑数据
     setRefreshKey((prev) => prev + 1);
   };
@@ -64,9 +74,9 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     setDeleteDialogOpen(true);
   };
 
-  const confirmDeleteSong = () => {
+  const confirmDeleteSong = async () => {
     if (songToDelete) {
-      deleteSong(songToDelete);
+      await deleteSong(songToDelete);
       setSongToDelete(null);
       setDeleteDialogOpen(false);
       // 触发重新加载专辑数据
@@ -88,33 +98,39 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     setEditSongDialogOpen(true);
   };
 
-  const handleSaveAlbum = (data: {
+  const handleSaveAlbum = async (data: {
     title: string;
     artist: string;
     year: string;
     coverUrl?: string;
   }) => {
     if (album) {
-      // 将专辑数据更新为完整的Album类型
-      const updatedAlbum: Album = {
-        ...album,
+      await updateAlbum(album.id, {
         title: data.title,
         artist: data.artist,
         year: data.year,
         coverUrl: data.coverUrl || album.coverUrl,
-      };
+      });
       setEditAlbumDialogOpen(false);
       // 触发重新加载专辑数据
       setRefreshKey((prev) => prev + 1);
     }
   };
 
-  const handleSaveSong = (data: {
+  const handleSaveSong = async (data: {
     title: string;
     duration: string;
     audioUrl?: string;
     lyricsUrl?: string;
   }) => {
+    if (songToEdit) {
+      await updateSong(songToEdit, {
+        title: data.title,
+        duration: data.duration,
+        audioUrl: data.audioUrl,
+        lyricsUrl: data.lyricsUrl,
+      });
+    }
     setEditSongDialogOpen(false);
     setSongToEdit(null);
     // 触发重新加载专辑数据
@@ -250,7 +266,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
                     <div className="text-sm text-gray-500 w-16 text-right">
                       {song.duration}
                     </div>
-                    {isUserUploadedSong(song.id) && (
+                    {isUserUploadedSong() && (
                       <>
                         <Button
                           variant="ghost"

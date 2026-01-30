@@ -1,10 +1,14 @@
 export interface Song {
   id: string;
+  albumId?: string;  // 所属专辑 ID（可选，用于从数据库加载的歌曲）
   title: string;
   duration: string;
   audioUrl: string;
   lyrics?: string;  // 歌词文本（用于静态数据）
   lyricsUrl?: string;  // 歌词文件 URL（用于用户上传的数据）
+  coverUrl?: string;  // 专辑封面 URL（可选）
+  artist?: string;  // 歌手（可选）
+  albumTitle?: string;  // 专辑名称（可选）
 }
 
 export interface Album {

@@ -29,16 +29,16 @@ interface UploadMusicDialogProps {
 
 export interface UploadFormData {
   albumTitle: string;
-  artist: string;
+  albumArtist: string;
+  albumYear: string;
+  albumCoverFile?: File | null;
+  albumCoverUrl?: string;  // 上传后的 URL
   songTitle: string;
-  duration: string;
-  audioFile: File | null;
-  audioUrl?: string;  // 上传后的 URL
-  coverFile: File | null;
-  coverUrl?: string;  // 上传后的 URL
-  lyricsFile?: File | null;  // LRC 文件
-  lyricsUrl?: string;  // 上传后的 LRC 文件 URL
-  year: string;
+  songDuration: string;
+  songAudioFile: File | null;
+  songAudioUrl?: string;  // 上传后的 URL
+  songLyricsFile?: File | null;  // LRC 文件
+  songLyricsUrl?: string;  // 上传后的 LRC 文件 URL
 }
 
 // 上传文件到服务器
@@ -67,12 +67,12 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
   const { token } = useAuth();
   const [formData, setFormData] = useState<UploadFormData>({
     albumTitle: '',
-    artist: '',
+    albumArtist: '',
+    albumYear: new Date().getFullYear().toString(),
+    albumCoverFile: null,
     songTitle: '',
-    duration: '',
-    audioFile: null,
-    coverFile: null,
-    year: new Date().getFullYear().toString(),
+    songDuration: '3:30',
+    songAudioFile: null,
   });
   const [isUploading, setIsUploading] = useState(false);
 
@@ -82,8 +82,8 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
       setFormData(prev => ({
         ...prev,
         albumTitle: presetAlbum.title,
-        artist: presetAlbum.artist,
-        year: presetAlbum.year,
+        albumArtist: presetAlbum.artist,
+        albumYear: presetAlbum.year,
       }));
     }
   }, [open, presetAlbum]);
@@ -99,7 +99,7 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.songTitle || !formData.artist || !formData.albumTitle) {
+    if (!formData.songTitle || !formData.albumArtist || !formData.albumTitle) {
       alert('请填写必要信息');
       return;
     }
@@ -108,29 +108,29 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
 
     try {
       // 上传音频文件
-      let audioUrl = formData.audioUrl;
-      if (formData.audioFile) {
-        audioUrl = await uploadFile(formData.audioFile, token || '');
+      let songAudioUrl = formData.songAudioUrl;
+      if (formData.songAudioFile) {
+        songAudioUrl = await uploadFile(formData.songAudioFile, token || '');
       }
 
       // 上传封面文件
-      let coverUrl = formData.coverUrl;
-      if (formData.coverFile) {
-        coverUrl = await uploadFile(formData.coverFile, token || '');
+      let albumCoverUrl = formData.albumCoverUrl;
+      if (formData.albumCoverFile) {
+        albumCoverUrl = await uploadFile(formData.albumCoverFile, token || '');
       }
 
-      // 上传 LRC 歌词文件
-      let lyricsUrl = formData.lyricsUrl;
-      if (formData.lyricsFile) {
-        lyricsUrl = await uploadFile(formData.lyricsFile, token || '');
+      // 上传歌词文件
+      let songLyricsUrl = formData.songLyricsUrl;
+      if (formData.songLyricsFile) {
+        songLyricsUrl = await uploadFile(formData.songLyricsFile, token || '');
       }
 
       // 构建完整数据
-      const uploadData = {
+      const uploadData: UploadFormData = {
         ...formData,
-        audioUrl,
-        coverUrl,
-        lyricsUrl,
+        songAudioUrl,
+        albumCoverUrl,
+        songLyricsUrl,
       };
 
       if (onUpload) {
@@ -140,12 +140,12 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
       // 重置表单
       setFormData({
         albumTitle: '',
-        artist: '',
+        albumArtist: '',
+        albumYear: new Date().getFullYear().toString(),
+        albumCoverFile: null,
         songTitle: '',
-        duration: '',
-        audioFile: null,
-        coverFile: null,
-        year: new Date().getFullYear().toString(),
+        songDuration: '3:30',
+        songAudioFile: null,
       });
 
       onOpenChange(false);
@@ -209,23 +209,23 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="year">发行年份</Label>
+                  <Label htmlFor="albumArtist">歌手 *</Label>
                   <Input
-                    id="year"
-                    type="number"
-                    value={formData.year}
-                    onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                    placeholder="2024"
-                  />
-                </div>
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="artist">歌手 *</Label>
-                  <Input
-                    id="artist"
-                    value={formData.artist}
-                    onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
+                    id="albumArtist"
+                    value={formData.albumArtist}
+                    onChange={(e) => setFormData({ ...formData, albumArtist: e.target.value })}
                     placeholder="例如：John Lennon"
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="albumYear">发行年份</Label>
+                  <Input
+                    id="albumYear"
+                    type="number"
+                    value={formData.albumYear}
+                    onChange={(e) => setFormData({ ...formData, albumYear: e.target.value })}
+                    placeholder="2024"
                   />
                 </div>
               </div>
@@ -247,44 +247,46 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="duration">时长</Label>
+                <Label htmlFor="songDuration">时长</Label>
                 <Input
-                  id="duration"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  id="songDuration"
+                  value={formData.songDuration}
+                  onChange={(e) => setFormData({ ...formData, songDuration: e.target.value })}
                   placeholder="3:45"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="audioFile">音频文件 (MP3)</Label>
+                <Label htmlFor="songAudioFile">音频文件 (MP3)</Label>
                 <Input
-                  id="audioFile"
+                  id="songAudioFile"
                   type="file"
                   accept=".mp3,audio/mpeg"
-                  onChange={(e) => setFormData({ ...formData, audioFile: e.target.files?.[0] || null })}
+                  onChange={(e) => setFormData({ ...formData, songAudioFile: e.target.files?.[0] || null })}
                 />
               </div>
+              {!presetAlbum && (
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="albumCoverFile">专辑封面</Label>
+                  <Input
+                    id="albumCoverFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setFormData({ ...formData, albumCoverFile: e.target.files?.[0] || null })}
+                  />
+                </div>
+              )}
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="coverFile">专辑封面</Label>
+                <Label htmlFor="songLyricsFile">歌词文件 (LRC)</Label>
                 <Input
-                  id="coverFile"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setFormData({ ...formData, coverFile: e.target.files?.[0] || null })}
-                />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="lyricsFile">歌词文件 (LRC)</Label>
-                <Input
-                  id="lyricsFile"
+                  id="songLyricsFile"
                   type="file"
                   accept=".lrc"
                   onChange={(e) => {
-                    setFormData({ ...formData, lyricsFile: e.target.files?.[0] || undefined });
+                    setFormData({ ...formData, songLyricsFile: e.target.files?.[0] || undefined });
                   }}
                 />
-                {formData.lyricsFile && (
-                  <p className="text-sm text-green-600">✓ 已选择歌词文件: {formData.lyricsFile.name}</p>
+                {formData.songLyricsFile && (
+                  <p className="text-sm text-green-600">✓ 已选择歌词文件: {formData.songLyricsFile.name}</p>
                 )}
               </div>
             </div>

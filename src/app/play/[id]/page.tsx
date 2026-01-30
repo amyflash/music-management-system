@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getSongById, getAllSongs } from '@/lib/storageManager';
+import { getSongById, getSongs } from '@/lib/storageManager';
+import { type Song } from '@/lib/musicData';
 import { parseLRC, getCurrentLyricIndex, type LyricLine, loadLyricsFromUrl } from '@/lib/lrcParser';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -26,10 +27,20 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const lyricContainerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [song, setSong] = useState<Song | null>(null);
+  const [allSongs, setAllSongs] = useState<Song[]>([]);
   const lyricItemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const song = useMemo(() => getSongById(songId), [songId, refreshKey]);
-  const allSongs = useMemo(() => getAllSongs(), [refreshKey]);
+  // 加载歌曲和所有歌曲
+  useEffect(() => {
+    const loadData = async () => {
+      const songData = await getSongById(songId);
+      setSong(songData);
+      const songsData = await getSongs();
+      setAllSongs(songsData);
+    };
+    loadData();
+  }, [songId, refreshKey]);
 
   // 解析 LRC 歌词
   useEffect(() => {

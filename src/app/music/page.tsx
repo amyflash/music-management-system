@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { albums as staticAlbums, Album } from '@/lib/musicData';
-import { getMergedAlbums, addUploadedSong, deleteAlbum, isUserUploadedAlbum } from '@/lib/storageManager';
+import { getMergedAlbums, createAlbum, createSong, deleteAlbum, isUserUploadedAlbum } from '@/lib/storageManager';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
@@ -29,9 +29,13 @@ export default function MusicListPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [albumToDelete, setAlbumToDelete] = useState<string | null>(null);
 
-  // 加载合并后的专辑数据
+  // 加载专辑数据
   useEffect(() => {
-    setAlbums(getMergedAlbums());
+    const loadAlbums = async () => {
+      const data = await getMergedAlbums();
+      setAlbums(data);
+    };
+    loadAlbums();
   }, [refreshKey]);
 
   const handleLogout = () => {
@@ -43,11 +47,27 @@ export default function MusicListPage() {
     router.push(`/album/${album.id}`);
   };
 
-  const handleUpload = (uploadData: UploadFormData) => {
-    // 保存上传的数据到 localStorage
-    addUploadedSong(uploadData);
-    // 触发重新加载专辑数据
-    setRefreshKey((prev) => prev + 1);
+  const handleUpload = async (uploadData: UploadFormData) => {
+    // 创建专辑
+    const newAlbum = await createAlbum({
+      title: uploadData.albumTitle,
+      artist: uploadData.albumArtist,
+      year: uploadData.albumYear,
+      coverUrl: uploadData.albumCoverUrl,
+    });
+
+    if (newAlbum && uploadData.songAudioUrl) {
+      // 创建歌曲
+      await createSong({
+        albumId: newAlbum.id,
+        title: uploadData.songTitle,
+        duration: uploadData.songDuration,
+        audioUrl: uploadData.songAudioUrl,
+        lyricsUrl: uploadData.songLyricsUrl,
+      });
+      // 触发重新加载专辑数据
+      setRefreshKey((prev) => prev + 1);
+    }
   };
 
   const handleDeleteAlbum = (albumId: string, e: React.MouseEvent) => {
@@ -56,9 +76,9 @@ export default function MusicListPage() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDeleteAlbum = () => {
+  const confirmDeleteAlbum = async () => {
     if (albumToDelete) {
-      deleteAlbum(albumToDelete);
+      await deleteAlbum(albumToDelete);
       setAlbumToDelete(null);
       setDeleteDialogOpen(false);
       // 触发重新加载专辑数据
@@ -147,7 +167,7 @@ export default function MusicListPage() {
                       <span>{album.songs.length} 首歌曲</span>
                     </div>
                   </div>
-                  {isUserUploadedAlbum(album.id) && (
+                  {isUserUploadedAlbum() && (
                     <Button
                       variant="ghost"
                       size="sm"
