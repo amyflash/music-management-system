@@ -1,8 +1,413 @@
-# projects
+# 音乐管理系统
 
-这是一个基于 [Next.js 16](https://nextjs.org) + [shadcn/ui](https://ui.shadcn.com) 的全栈应用项目，由扣子编程 CLI 创建。
+一个基于 Next.js 16 + PostgreSQL 的单用户音乐管理网站，支持专辑管理、歌曲上传、在线播放和歌词同步显示。
+
+## 功能特性
+
+### 核心功能
+
+- 📀 **专辑管理**
+  - 创建、编辑、删除专辑
+  - 支持上传专辑封面
+  - 查看专辑列表和详情
+
+- 🎵 **歌曲管理**
+  - 添加歌曲到指定专辑
+  - 编辑歌曲信息（名称、时长、音频文件、歌词）
+  - 删除歌曲
+  - 支持批量上传
+
+- 🎧 **在线播放**
+  - 流式播放音频文件
+  - 播放进度控制
+  - 音量调节（默认 50%）
+  - 上一首/下一首切换
+
+- 📝 **歌词同步**
+  - 支持 LRC 格式歌词文件
+  - 歌词时间轴同步滚动
+  - 点击歌词跳转到对应时间
+  - 支持从 URL 加载歌词
+
+- 🔐 **用户认证**
+  - 基于 Token 的登录系统
+  - 登录状态持久化（localStorage）
+
+- 📤 **文件上传**
+  - 支持音频文件上传（MP3）
+  - 支持图片文件上传（专辑封面）
+  - 支持歌词文件上传（LRC）
+  - 文件保存到 `public/uploads` 目录
+
+## 技术栈
+
+### 前端
+
+- **框架**: Next.js 16 (App Router)
+- **UI 库**: React 19 + shadcn/ui
+- **语言**: TypeScript 5
+- **样式**: Tailwind CSS 4
+- **状态管理**: React Hooks (useState, useEffect)
+- **路由**: Next.js App Router
+
+### 后端
+
+- **API**: Next.js API Routes
+- **数据库**: PostgreSQL
+- **ORM**: Drizzle ORM
+- **认证**: Bearer Token
+
+### 开发工具
+
+- **包管理器**: pnpm
+- **代码规范**: TypeScript ESLint
+- **组件库**: shadcn/ui (基于 Radix UI)
+
+## 项目结构
+
+```
+src/
+├── app/                      # Next.js App Router 目录
+│   ├── api/                  # API 路由
+│   │   ├── albums/          # 专辑 API
+│   │   │   ├── route.ts    # 专辑列表（GET, POST）
+│   │   │   └── [id]/       # 专辑详情（GET, PUT, DELETE）
+│   │   ├── songs/           # 歌曲 API
+│   │   │   ├── route.ts    # 歌曲列表（GET, POST）
+│   │   │   └── [id]/       # 歌曲详情（GET, PUT, DELETE）
+│   │   └── upload/         # 文件上传 API
+│   ├── album/              # 专辑详情页
+│   │   └── [id]/page.tsx
+│   ├── music/              # 音乐列表页
+│   │   └── page.tsx
+│   ├── play/               # 播放页面
+│   │   └── [id]/page.tsx
+│   ├── login/              # 登录页
+│   │   └── page.tsx
+│   ├── layout.tsx          # 根布局
+│   └── page.tsx            # 首页
+├── components/             # React 组件
+│   ├── ui/                # shadcn/ui 基础组件
+│   ├── upload-music-dialog.tsx      # 上传音乐对话框
+│   ├── edit-album-dialog.tsx        # 编辑专辑对话框
+│   └── edit-song-dialog.tsx         # 编辑歌曲对话框
+├── contexts/              # React Context
+│   └── AuthContext.tsx    # 认证上下文
+├── lib/                   # 工具函数库
+│   ├── musicData.ts       # 音乐数据类型
+│   ├── lrcParser.ts       # LRC 歌词解析器
+│   └── storageManager.ts  # 数据存储管理器
+├── storage/               # 数据存储
+│   └── database/         # 数据库相关
+│       ├── shared/
+│       │   └── schema.ts # 数据库表定义
+│       ├── albumManager.ts   # 专辑数据管理
+│       ├── songManager.ts    # 歌曲数据管理
+│       └── index.ts          # 导出
+└── public/
+    └── uploads/           # 上传文件存储目录
+```
+
+## 数据库结构
+
+### albums 表（专辑表）
+
+| 字段名 | 类型 | 说明 | 约束 |
+|--------|------|------|------|
+| id | varchar(36) | 专辑 ID（UUID） | PRIMARY KEY |
+| title | varchar(255) | 专辑名称 | NOT NULL |
+| artist | varchar(255) | 歌手 | NOT NULL |
+| year | varchar(10) | 发行年份 | NOT NULL |
+| coverUrl | varchar(500) | 封面 URL | 可空 |
+| createdAt | timestamp | 创建时间 | NOT NULL, DEFAULT NOW() |
+| updatedAt | timestamp | 更新时间 | 可空 |
+
+### songs 表（歌曲表）
+
+| 字段名 | 类型 | 说明 | 约束 |
+|--------|------|------|------|
+| id | varchar(36) | 歌曲 ID（UUID） | PRIMARY KEY |
+| albumId | varchar(36) | 专辑 ID（外键） | NOT NULL, FOREIGN KEY |
+| title | varchar(255) | 歌曲名称 | NOT NULL |
+| duration | varchar(10) | 时长（如 3:30） | NOT NULL |
+| audioUrl | varchar(500) | 音频 URL | NOT NULL |
+| lyricsUrl | varchar(500) | 歌词 URL | 可空 |
+| createdAt | timestamp | 创建时间 | NOT NULL, DEFAULT NOW() |
+| updatedAt | timestamp | 更新时间 | 可空 |
+
+### 索引
+
+- `albums_title_idx`: 专辑名称索引
+- `songs_album_id_idx`: 专辑 ID 索引
+
+## API 文档
+
+### 专辑 API
+
+#### GET /api/albums
+获取所有专辑
+
+**Query 参数:**
+- `search` (可选): 搜索关键词
+- `skip` (可选): 跳过记录数，默认 0
+- `limit` (可选): 返回记录数，默认 100
+
+**响应:**
+```json
+{
+  "albums": [
+    {
+      "id": "uuid",
+      "title": "专辑名称",
+      "artist": "歌手",
+      "year": "2024",
+      "coverUrl": "https://example.com/cover.jpg",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": null
+    }
+  ]
+}
+```
+
+#### POST /api/albums
+创建专辑
+
+**请求体:**
+```json
+{
+  "title": "专辑名称",
+  "artist": "歌手",
+  "year": "2024",
+  "coverUrl": "https://example.com/cover.jpg"
+}
+```
+
+**响应:**
+```json
+{
+  "album": {
+    "id": "uuid",
+    "title": "专辑名称",
+    "artist": "歌手",
+    "year": "2024",
+    "coverUrl": "https://example.com/cover.jpg",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": null
+  }
+}
+```
+
+#### GET /api/albums/[id]
+获取专辑详情（包含歌曲列表）
+
+**响应:**
+```json
+{
+  "album": {
+    "id": "uuid",
+    "title": "专辑名称",
+    "artist": "歌手",
+    "year": "2024",
+    "coverUrl": "https://example.com/cover.jpg",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": null,
+    "songs": [
+      {
+        "id": "uuid",
+        "albumId": "uuid",
+        "title": "歌曲名称",
+        "duration": "3:30",
+        "audioUrl": "https://example.com/audio.mp3",
+        "lyricsUrl": "https://example.com/lyrics.lrc",
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "updatedAt": null
+      }
+    ]
+  }
+}
+```
+
+#### PUT /api/albums/[id]
+更新专辑
+
+**请求体:**
+```json
+{
+  "title": "新专辑名称",
+  "artist": "新歌手",
+  "year": "2025",
+  "coverUrl": "https://example.com/new-cover.jpg"
+}
+```
+
+**响应:**
+```json
+{
+  "album": { /* 更新后的专辑对象 */ }
+}
+```
+
+#### DELETE /api/albums/[id]
+删除专辑（同时删除关联的歌曲）
+
+**响应:**
+```json
+{
+  "message": "删除成功"
+}
+```
+
+### 歌曲 API
+
+#### GET /api/songs
+获取所有歌曲
+
+**Query 参数:**
+- `albumId` (可选): 筛选指定专辑的歌曲
+- `search` (可选): 搜索关键词
+- `skip` (可选): 跳过记录数，默认 0
+- `limit` (可选): 返回记录数，默认 100
+
+**响应:**
+```json
+{
+  "songs": [
+    {
+      "id": "uuid",
+      "albumId": "uuid",
+      "title": "歌曲名称",
+      "duration": "3:30",
+      "audioUrl": "https://example.com/audio.mp3",
+      "lyricsUrl": "https://example.com/lyrics.lrc",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": null
+    }
+  ]
+}
+```
+
+#### POST /api/songs
+创建歌曲
+
+**请求体:**
+```json
+{
+  "albumId": "uuid",
+  "title": "歌曲名称",
+  "duration": "3:30",
+  "audioUrl": "https://example.com/audio.mp3",
+  "lyricsUrl": "https://example.com/lyrics.lrc"
+}
+```
+
+**响应:**
+```json
+{
+  "song": { /* 创建的歌曲对象 */ }
+}
+```
+
+#### GET /api/songs/[id]
+获取歌曲详情
+
+**响应:**
+```json
+{
+  "song": { /* 歌曲对象 */ }
+}
+```
+
+#### PUT /api/songs/[id]
+更新歌曲
+
+**请求体:**
+```json
+{
+  "albumId": "uuid",
+  "title": "新歌曲名称",
+  "duration": "4:00",
+  "audioUrl": "https://example.com/new-audio.mp3",
+  "lyricsUrl": "https://example.com/new-lyrics.lrc"
+}
+```
+
+**响应:**
+```json
+{
+  "song": { /* 更新后的歌曲对象 */ }
+}
+```
+
+#### DELETE /api/songs/[id]
+删除歌曲
+
+**响应:**
+```json
+{
+  "message": "删除成功"
+}
+```
+
+### 文件上传 API
+
+#### POST /api/upload
+上传文件
+
+**请求头:**
+```
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+```
+
+**请求体:**
+```
+file: <文件>
+```
+
+**响应:**
+```json
+{
+  "url": "https://example.com/uploads/filename.ext"
+}
+```
+
+**支持的文件类型:**
+- 音频: `.mp3`, `audio/mpeg`
+- 图片: `image/*`
+- 歌词: `.lrc`
 
 ## 快速开始
+
+### 环境要求
+
+- Node.js 18+
+- PostgreSQL 数据库
+- pnpm 包管理器
+
+### 安装依赖
+
+```bash
+pnpm install
+```
+
+### 配置环境变量
+
+创建 `.env` 文件：
+
+```env
+# 数据库连接
+DATABASE_URL=postgresql://user:password@localhost:5432/music_db
+```
+
+### 数据库初始化
+
+```bash
+# 同步数据库模型
+coze-coding-ai db generate-models
+
+# 创建数据表
+coze-coding-ai db upgrade
+```
 
 ### 启动开发服务器
 
@@ -11,8 +416,6 @@ coze dev
 ```
 
 启动后，在浏览器中打开 [http://localhost:5000](http://localhost:5000) 查看应用。
-
-开发服务器支持热更新，修改代码后页面会自动刷新。
 
 ### 构建生产版本
 
@@ -26,333 +429,194 @@ coze build
 coze start
 ```
 
-## 项目结构
+## 开发规范
 
-```
-src/
-├── app/                      # Next.js App Router 目录
-│   ├── layout.tsx           # 根布局组件
-│   ├── page.tsx             # 首页
-│   ├── globals.css          # 全局样式（包含 shadcn 主题变量）
-│   └── [route]/             # 其他路由页面
-├── components/              # React 组件目录
-│   └── ui/                  # shadcn/ui 基础组件（优先使用）
-│       ├── button.tsx
-│       ├── card.tsx
-│       └── ...
-├── lib/                     # 工具函数库
-│   └── utils.ts            # cn() 等工具函数
-└── hooks/                   # 自定义 React Hooks（可选）
-```
+### 组件开发
 
-## 核心开发规范
-
-### 1. 组件开发
-
-**优先使用 shadcn/ui 基础组件**
-
-本项目已预装完整的 shadcn/ui 组件库，位于 `src/components/ui/` 目录。开发时应优先使用这些组件作为基础：
+优先使用 shadcn/ui 基础组件：
 
 ```tsx
-// ✅ 推荐：使用 shadcn 基础组件
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+```
 
-export default function MyComponent() {
-  return (
-    <Card>
-      <CardHeader>标题</CardHeader>
-      <CardContent>
-        <Input placeholder="输入内容" />
-        <Button>提交</Button>
-      </CardContent>
-    </Card>
-  );
+### 样式开发
+
+使用 Tailwind CSS v4：
+
+```tsx
+<div className="flex items-center gap-4 p-4">
+  <Button>提交</Button>
+</div>
+```
+
+### 类型定义
+
+使用 TypeScript 进行类型检查：
+
+```tsx
+interface Song {
+  id: string;
+  title: string;
+  duration: string;
+  audioUrl: string;
+  lyricsUrl?: string;
 }
 ```
 
-**可用的 shadcn 组件清单**
+### API 调用
 
-- 表单：`button`, `input`, `textarea`, `select`, `checkbox`, `radio-group`, `switch`, `slider`
-- 布局：`card`, `separator`, `tabs`, `accordion`, `collapsible`, `scroll-area`
-- 反馈：`alert`, `alert-dialog`, `dialog`, `toast`, `sonner`, `progress`
-- 导航：`dropdown-menu`, `menubar`, `navigation-menu`, `context-menu`
-- 数据展示：`table`, `avatar`, `badge`, `hover-card`, `tooltip`, `popover`
-- 其他：`calendar`, `command`, `carousel`, `resizable`, `sidebar`
+使用 fetch 调用 API：
 
-详见 `src/components/ui/` 目录下的具体组件实现。
+```tsx
+const response = await fetch('/api/albums');
+const data = await response.json();
+```
 
-### 2. 路由开发
+## 部署说明
 
-Next.js 使用文件系统路由，在 `src/app/` 目录下创建文件夹即可添加路由：
+### 1. 准备部署环境
+
+确保目标环境已安装：
+- Node.js 18+
+- PostgreSQL 数据库
+
+### 2. 安装依赖
 
 ```bash
-# 创建新路由 /about
-src/app/about/page.tsx
-
-# 创建动态路由 /posts/[id]
-src/app/posts/[id]/page.tsx
-
-# 创建路由组（不影响 URL）
-src/app/(marketing)/about/page.tsx
-
-# 创建 API 路由
-src/app/api/users/route.ts
-```
-
-**页面组件示例**
-
-```tsx
-// src/app/about/page.tsx
-import { Button } from '@/components/ui/button';
-
-export const metadata = {
-  title: '关于我们',
-  description: '关于页面描述',
-};
-
-export default function AboutPage() {
-  return (
-    <div>
-      <h1>关于我们</h1>
-      <Button>了解更多</Button>
-    </div>
-  );
-}
-```
-
-**动态路由示例**
-
-```tsx
-// src/app/posts/[id]/page.tsx
-export default async function PostPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-
-  return <div>文章 ID: {id}</div>;
-}
-```
-
-**API 路由示例**
-
-```tsx
-// src/app/api/users/route.ts
-import { NextResponse } from 'next/server';
-
-export async function GET() {
-  return NextResponse.json({ users: [] });
-}
-
-export async function POST(request: Request) {
-  const body = await request.json();
-  return NextResponse.json({ success: true });
-}
-```
-
-### 3. 依赖管理
-
-**必须使用 pnpm 管理依赖**
-
-```bash
-# ✅ 安装依赖
 pnpm install
-
-# ✅ 添加新依赖
-pnpm add package-name
-
-# ✅ 添加开发依赖
-pnpm add -D package-name
-
-# ❌ 禁止使用 npm 或 yarn
-# npm install  # 错误！
-# yarn add     # 错误！
 ```
 
-项目已配置 `preinstall` 脚本，使用其他包管理器会报错。
+### 3. 配置环境变量
 
-### 4. 样式开发
+在部署环境中配置 `.env` 文件：
 
-**使用 Tailwind CSS v4**
-
-本项目使用 Tailwind CSS v4 进行样式开发，并已配置 shadcn 主题变量。
-
-```tsx
-// 使用 Tailwind 类名
-<div className="flex items-center gap-4 p-4 rounded-lg bg-background">
-  <Button className="bg-primary text-primary-foreground">
-    主要按钮
-  </Button>
-</div>
-
-// 使用 cn() 工具函数合并类名
-import { cn } from '@/lib/utils';
-
-<div className={cn(
-  "base-class",
-  condition && "conditional-class",
-  className
-)}>
-  内容
-</div>
+```env
+DATABASE_URL=postgresql://user:password@your-host:5432/music_db
 ```
 
-**主题变量**
+### 4. 数据库迁移
 
-主题变量定义在 `src/app/globals.css` 中，支持亮色/暗色模式：
+```bash
+# 同步数据库模型
+coze-coding-ai db generate-models
 
-- `--background`, `--foreground`
-- `--primary`, `--primary-foreground`
-- `--secondary`, `--secondary-foreground`
-- `--muted`, `--muted-foreground`
-- `--accent`, `--accent-foreground`
-- `--destructive`, `--destructive-foreground`
-- `--border`, `--input`, `--ring`
+# 创建数据表
+coze-coding-ai db upgrade
+```
 
-### 5. 表单开发
+### 5. 构建应用
 
-推荐使用 `react-hook-form` + `zod` 进行表单开发：
+```bash
+coze build
+```
 
-```tsx
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+### 6. 启动服务
 
-const formSchema = z.object({
-  username: z.string().min(2, '用户名至少 2 个字符'),
-  email: z.string().email('请输入有效的邮箱'),
-});
+```bash
+coze start
+```
 
-export default function MyForm() {
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: { username: '', email: '' },
-  });
+服务将运行在 http://localhost:5000
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data);
-  };
+### 7. 使用进程管理器（推荐）
 
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <Input {...form.register('username')} />
-      <Input {...form.register('email')} />
-      <Button type="submit">提交</Button>
-    </form>
-  );
+使用 PM2 管理进程：
+
+```bash
+# 安装 PM2
+pnpm add -g pm2
+
+# 启动应用
+pm2 start npm --name "music-app" -- start
+
+# 查看状态
+pm2 status
+
+# 查看日志
+pm2 logs music-app
+
+# 重启应用
+pm2 restart music-app
+
+# 停止应用
+pm2 stop music-app
+```
+
+### 8. 配置 Nginx 反向代理（可选）
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # 静态文件缓存
+    location /uploads/ {
+        proxy_pass http://localhost:5000;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
 }
 ```
 
-### 6. 数据获取
+### 9. 配置 HTTPS（可选）
 
-**服务端组件（推荐）**
+使用 Let's Encrypt 配置 HTTPS：
 
-```tsx
-// src/app/posts/page.tsx
-async function getPosts() {
-  const res = await fetch('https://api.example.com/posts', {
-    cache: 'no-store', // 或 'force-cache'
-  });
-  return res.json();
-}
+```bash
+# 安装 Certbot
+sudo apt-get install certbot python3-certbot-nginx
 
-export default async function PostsPage() {
-  const posts = await getPosts();
+# 获取证书
+sudo certbot --nginx -d your-domain.com
 
-  return (
-    <div>
-      {posts.map(post => (
-        <div key={post.id}>{post.title}</div>
-      ))}
-    </div>
-  );
-}
+# 自动续期
+sudo certbot renew --dry-run
 ```
 
-**客户端组件**
+## 常见问题
 
-```tsx
-'use client';
+### 1. 文件上传失败
 
-import { useEffect, useState } from 'react';
+检查：
+- 文件大小是否超过限制
+- 文件类型是否支持
+- Token 是否有效
 
-export default function ClientComponent() {
-  const [data, setData] = useState(null);
+### 2. 数据库连接失败
 
-  useEffect(() => {
-    fetch('/api/data')
-      .then(res => res.json())
-      .then(setData);
-  }, []);
+检查：
+- DATABASE_URL 是否正确配置
+- PostgreSQL 服务是否启动
+- 数据库用户权限是否足够
 
-  return <div>{JSON.stringify(data)}</div>;
-}
-```
+### 3. 歌词无法显示
 
-## 常见开发场景
+检查：
+- 歌词文件格式是否为 LRC
+- lyricsUrl 是否可访问
+- 浏览器控制台是否有错误
 
-### 添加新页面
+### 4. 音频无法播放
 
-1. 在 `src/app/` 下创建文件夹和 `page.tsx`
-2. 使用 shadcn 组件构建 UI
-3. 根据需要添加 `layout.tsx` 和 `loading.tsx`
+检查：
+- 音频文件格式是否为 MP3
+- audioUrl 是否可访问
+- 浏览器是否支持音频播放
 
-### 创建业务组件
+## 许可证
 
-1. 在 `src/components/` 下创建组件文件（非 UI 组件）
-2. 优先组合使用 `src/components/ui/` 中的基础组件
-3. 使用 TypeScript 定义 Props 类型
+MIT
 
-### 添加全局状态
+## 联系方式
 
-推荐使用 React Context 或 Zustand：
-
-```tsx
-// src/lib/store.ts
-import { create } from 'zustand';
-
-interface Store {
-  count: number;
-  increment: () => void;
-}
-
-export const useStore = create<Store>((set) => ({
-  count: 0,
-  increment: () => set((state) => ({ count: state.count + 1 })),
-}));
-```
-
-### 集成数据库
-
-推荐使用 Prisma 或 Drizzle ORM，在 `src/lib/db.ts` 中配置。
-
-## 技术栈
-
-- **框架**: Next.js 16.1.1 (App Router)
-- **UI 组件**: shadcn/ui (基于 Radix UI)
-- **样式**: Tailwind CSS v4
-- **表单**: React Hook Form + Zod
-- **图标**: Lucide React
-- **字体**: Geist Sans & Geist Mono
-- **包管理器**: pnpm 9+
-- **TypeScript**: 5.x
-
-## 参考文档
-
-- [Next.js 官方文档](https://nextjs.org/docs)
-- [shadcn/ui 组件文档](https://ui.shadcn.com)
-- [Tailwind CSS 文档](https://tailwindcss.com/docs)
-- [React Hook Form](https://react-hook-form.com)
-
-## 重要提示
-
-1. **必须使用 pnpm** 作为包管理器
-2. **优先使用 shadcn/ui 组件** 而不是从零开发基础组件
-3. **遵循 Next.js App Router 规范**，正确区分服务端/客户端组件
-4. **使用 TypeScript** 进行类型安全开发
-5. **使用 `@/` 路径别名** 导入模块（已配置）
+如有问题，请提交 Issue 或 Pull Request。
