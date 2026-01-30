@@ -19,7 +19,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState(0.5);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [currentLyricIndex, setCurrentLyricIndex] = useState(-1);
@@ -166,6 +166,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration);
+      audioRef.current.volume = volume;  // 设置初始音量
     }
   };
 
@@ -299,24 +300,14 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
-          <Card className="overflow-hidden bg-white/95 backdrop-blur-sm shadow-2xl">
-            <div className="grid md:grid-cols-2 gap-8 p-8">
-              {/* 专辑封面 */}
-              <div className="flex items-center justify-center">
-                <img
-                  src={song.coverUrl}
-                  alt={song.title}
-                  className="w-full max-w-md aspect-square object-cover rounded-2xl shadow-lg"
-                />
+          <Card className="p-8 bg-white/95 backdrop-blur-sm shadow-2xl">
+            {/* 播放器控制 */}
+            <div className="flex flex-col justify-center space-y-6">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900">{song.title}</h2>
+                <p className="text-xl text-gray-600 mt-2">{song.artist}</p>
+                <p className="text-gray-500 mt-1">{song.albumTitle}</p>
               </div>
-
-              {/* 播放器控制 */}
-              <div className="flex flex-col justify-center space-y-6">
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900">{song.title}</h2>
-                  <p className="text-xl text-gray-600 mt-2">{song.artist}</p>
-                  <p className="text-gray-500 mt-1">{song.albumTitle}</p>
-                </div>
 
                 {/* 音频元素 */}
                 <audio
@@ -386,14 +377,13 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                     type="range"
                     min="0"
                     max="1"
-                    step="0.1"
+                    step="0.05"
                     value={volume}
                     onChange={handleVolumeChange}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
                   />
                 </div>
               </div>
-            </div>
           </Card>
 
           {/* 歌词卡片 */}
