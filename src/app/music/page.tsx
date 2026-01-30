@@ -4,11 +4,21 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { albums as staticAlbums, Album } from '@/lib/musicData';
-import { getMergedAlbums, addUploadedSong } from '@/lib/storageManager';
+import { getMergedAlbums, addUploadedSong, deleteAlbum, isUserUploadedAlbum } from '@/lib/storageManager';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
-import { Disc, LogOut, User, Music as MusicIcon, Upload as UploadIcon } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Disc, LogOut, User, Music as MusicIcon, Upload as UploadIcon, Trash2 } from 'lucide-react';
 
 export default function MusicListPage() {
   const { user, logout } = useAuth();
@@ -16,6 +26,8 @@ export default function MusicListPage() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [albumToDelete, setAlbumToDelete] = useState<string | null>(null);
 
   // 加载合并后的专辑数据
   useEffect(() => {
@@ -36,6 +48,27 @@ export default function MusicListPage() {
     addUploadedSong(uploadData);
     // 触发重新加载专辑数据
     setRefreshKey((prev) => prev + 1);
+  };
+
+  const handleDeleteAlbum = (albumId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAlbumToDelete(albumId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteAlbum = () => {
+    if (albumToDelete) {
+      deleteAlbum(albumToDelete);
+      setAlbumToDelete(null);
+      setDeleteDialogOpen(false);
+      // 触发重新加载专辑数据
+      setRefreshKey((prev) => prev + 1);
+    }
+  };
+
+  const cancelDeleteAlbum = () => {
+    setAlbumToDelete(null);
+    setDeleteDialogOpen(false);
   };
 
   return (
@@ -105,11 +138,25 @@ export default function MusicListPage() {
               </div>
 
               <CardContent className="p-4">
-                <h3 className="font-bold text-lg text-gray-900 truncate">{album.title}</h3>
-                <p className="text-gray-600 mt-1 truncate">{album.artist}</p>
-                <div className="flex items-center justify-between mt-2 text-sm text-gray-500">
-                  <span className="truncate">{album.year}</span>
-                  <span>{album.songs.length} 首歌曲</span>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-lg text-gray-900 truncate">{album.title}</h3>
+                    <p className="text-gray-600 mt-1 truncate">{album.artist}</p>
+                    <div className="flex items-center justify-between mt-2 text-sm text-gray-500">
+                      <span className="truncate">{album.year}</span>
+                      <span>{album.songs.length} 首歌曲</span>
+                    </div>
+                  </div>
+                  {isUserUploadedAlbum(album.id) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleDeleteAlbum(album.id, e)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex-shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -123,6 +170,27 @@ export default function MusicListPage() {
         onOpenChange={setUploadDialogOpen}
         onUpload={handleUpload}
       />
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除专辑</AlertDialogTitle>
+            <AlertDialogDescription>
+              你确定要删除这个专辑吗？此操作将删除专辑中的所有歌曲，无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDeleteAlbum}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteAlbum}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

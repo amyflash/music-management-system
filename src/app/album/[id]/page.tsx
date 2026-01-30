@@ -4,11 +4,21 @@ import { useState, use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { albums as staticAlbums, Album } from '@/lib/musicData';
-import { getMergedAlbums, addUploadedSong } from '@/lib/storageManager';
+import { getMergedAlbums, addUploadedSong, deleteSong, isUserUploadedSong } from '@/lib/storageManager';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
-import { ArrowLeft, Play, LogOut, User, Music as MusicIcon, Disc, Upload as UploadIcon } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { ArrowLeft, Play, LogOut, User, Music as MusicIcon, Disc, Upload as UploadIcon, Trash2 } from 'lucide-react';
 
 export default function AlbumDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -18,6 +28,8 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [songToDelete, setSongToDelete] = useState<string | null>(null);
 
   const album = albums.find((a) => a.id === albumId);
 
@@ -40,6 +52,26 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     addUploadedSong(uploadData);
     // 触发重新加载专辑数据
     setRefreshKey((prev) => prev + 1);
+  };
+
+  const handleDeleteSong = (songId: string) => {
+    setSongToDelete(songId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteSong = () => {
+    if (songToDelete) {
+      deleteSong(songToDelete);
+      setSongToDelete(null);
+      setDeleteDialogOpen(false);
+      // 触发重新加载专辑数据
+      setRefreshKey((prev) => prev + 1);
+    }
+  };
+
+  const cancelDeleteSong = () => {
+    setSongToDelete(null);
+    setDeleteDialogOpen(false);
   };
 
   if (!album) {
@@ -134,20 +166,39 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
               {album.songs.map((song, index) => (
                 <div
                   key={song.id}
-                  className="flex items-center gap-4 p-4 hover:bg-purple-50 cursor-pointer transition-colors group"
-                  onClick={() => handleSongClick(song.id)}
+                  className="flex items-center gap-4 p-4 hover:bg-purple-50 transition-colors group"
                 >
-                  <div className="w-8 text-center text-gray-400 group-hover:text-purple-600">
-                    {index + 1}
+                  <div
+                    className="flex items-center gap-4 flex-1 cursor-pointer"
+                    onClick={() => handleSongClick(song.id)}
+                  >
+                    <div className="w-8 text-center text-gray-400 group-hover:text-purple-600">
+                      {index + 1}
+                    </div>
+                    <div className="p-2 rounded-full bg-purple-100 group-hover:bg-purple-500 transition-colors">
+                      <Play className="w-4 h-4 text-purple-600 group-hover:text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 truncate">{song.title}</h3>
+                    </div>
                   </div>
-                  <div className="p-2 rounded-full bg-purple-100 group-hover:bg-purple-500 transition-colors">
-                    <Play className="w-4 h-4 text-purple-600 group-hover:text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 truncate">{song.title}</h3>
-                  </div>
-                  <div className="text-sm text-gray-500 w-16 text-right">
-                    {song.duration}
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-gray-500 w-16 text-right">
+                      {song.duration}
+                    </div>
+                    {isUserUploadedSong(song.id) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSong(song.id);
+                        }}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -162,6 +213,27 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
         onOpenChange={setUploadDialogOpen}
         onUpload={handleUpload}
       />
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除歌曲</AlertDialogTitle>
+            <AlertDialogDescription>
+              你确定要删除这首歌吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDeleteSong}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteSong}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -170,3 +170,59 @@ export function getSongById(songId: string): (Song & { albumId: string; albumTit
 
   return null;
 }
+
+// 检查歌曲是否为用户上传的歌曲
+export function isUserUploadedSong(songId: string): boolean {
+  const userData = getUserData();
+
+  for (const albumId in userData.albums) {
+    if (userData.albums[albumId].songs.some((song) => song.id === songId)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// 检查专辑是否为用户创建的专辑
+export function isUserUploadedAlbum(albumId: string): boolean {
+  const userData = getUserData();
+  return albumId in userData.albums;
+}
+
+// 删除歌曲
+export function deleteSong(songId: string): boolean {
+  const userData = getUserData();
+
+  for (const albumId in userData.albums) {
+    const songIndex = userData.albums[albumId].songs.findIndex((song) => song.id === songId);
+
+    if (songIndex !== -1) {
+      // 找到歌曲，删除它
+      userData.albums[albumId].songs.splice(songIndex, 1);
+
+      // 如果专辑没有歌曲了，删除整个专辑
+      if (userData.albums[albumId].songs.length === 0) {
+        delete userData.albums[albumId];
+      }
+
+      saveUserData(userData);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// 删除专辑
+export function deleteAlbum(albumId: string): boolean {
+  const userData = getUserData();
+
+  if (userData.albums[albumId]) {
+    delete userData.albums[albumId];
+    saveUserData(userData);
+    return true;
+  }
+
+  return false;
+}
