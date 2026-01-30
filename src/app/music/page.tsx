@@ -1,15 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { albums, Album } from '@/lib/musicData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Disc, LogOut, User, Music as MusicIcon } from 'lucide-react';
+import { UploadMusicDialog } from '@/components/upload-music-dialog';
+import { Disc, LogOut, User, Music as MusicIcon, Upload as UploadIcon } from 'lucide-react';
 
 export default function MusicListPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -35,6 +38,13 @@ export default function MusicListPage() {
           </div>
 
           <div className="flex items-center space-x-4">
+            <Button
+              onClick={() => setUploadDialogOpen(true)}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            >
+              <UploadIcon className="w-4 h-4 mr-2" />
+              上传音乐
+            </Button>
             <div className="flex items-center space-x-2 text-gray-700">
               <User className="w-5 h-5" />
               <span className="font-medium">{user?.name}</span>
@@ -91,6 +101,12 @@ export default function MusicListPage() {
           ))}
         </div>
       </main>
+
+      {/* 上传音乐对话框 */}
+      <UploadMusicDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+      />
     </div>
   );
 }

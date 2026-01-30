@@ -7,7 +7,8 @@ import { getSongById, getAllSongs } from '@/lib/musicData';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Play, Pause, Volume2, SkipBack, SkipForward, User, LogOut, Music as MusicIcon, FileText } from 'lucide-react';
+import { UploadMusicDialog } from '@/components/upload-music-dialog';
+import { ArrowLeft, Play, Pause, Volume2, SkipBack, SkipForward, User, LogOut, Music as MusicIcon, FileText, Upload as UploadIcon } from 'lucide-react';
 
 export default function PlayPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -18,6 +19,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const song = getSongById(songId);
@@ -121,6 +123,13 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
           </div>
 
           <div className="flex items-center space-x-4">
+            <Button
+              onClick={() => setUploadDialogOpen(true)}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            >
+              <UploadIcon className="w-4 h-4 mr-2" />
+              上传音乐
+            </Button>
             <div className="flex items-center space-x-2 text-gray-700">
               <User className="w-5 h-5" />
               <span className="font-medium">{user?.name}</span>
@@ -269,6 +278,12 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
           )}
         </div>
       </main>
+
+      {/* 上传音乐对话框 */}
+      <UploadMusicDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+      />
     </div>
   );
 }
