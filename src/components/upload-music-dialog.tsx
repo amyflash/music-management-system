@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Upload, Loader2 } from 'lucide-react';
 
 interface UploadMusicDialogProps {
@@ -175,15 +174,25 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="lyrics">歌词（可选）</Label>
-                <Textarea
-                  id="lyrics"
-                  value={formData.lyrics}
-                  onChange={(e) => setFormData({ ...formData, lyrics: e.target.value })}
-                  placeholder="输入歌词内容..."
-                  rows={6}
-                  className="resize-none"
+                <Label htmlFor="lyricsFile">歌词文件 (LRC)</Label>
+                <Input
+                  id="lyricsFile"
+                  type="file"
+                  accept=".lrc"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        setFormData({ ...formData, lyrics: e.target?.result as string });
+                      };
+                      reader.readAsText(file);
+                    }
+                  }}
                 />
+                {formData.lyrics && (
+                  <p className="text-sm text-green-600">✓ 已加载歌词文件</p>
+                )}
               </div>
             </div>
           </div>

@@ -28,26 +28,22 @@ export const albums: Album[] = [
         title: 'Imagine',
         duration: '3:01',
         audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-        lyrics: `Imagine there's no heaven
-It's easy if you try
-No hell below us
-Above us, only sky
-
-Imagine all the people
-Living for today
-
-Imagine there's no countries
-It isn't hard to do
-Nothing to kill or die for
-And no religion too
-
-Imagine all the people
-Living life in peace
-
-You may say I'm a dreamer
-But I'm not the only one
-I hope someday you'll join us
-And the world will be as one`
+        lyrics: `[00:00.00]Imagine there's no heaven
+[00:04.50]It's easy if you try
+[00:09.00]No hell below us
+[00:13.50]Above us, only sky
+[00:18.00]Imagine all the people
+[00:23.00]Living for today
+[00:28.50]Imagine there's no countries
+[00:33.00]It isn't hard to do
+[00:38.00]Nothing to kill or die for
+[00:42.50]And no religion too
+[00:47.00]Imagine all the people
+[00:52.00]Living life in peace
+[00:56.50]You may say I'm a dreamer
+[01:02.00]But I'm not the only one
+[01:07.00]I hope someday you'll join us
+[01:12.00]And the world will be as one`
       },
       {
         id: '1-2',
@@ -75,33 +71,23 @@ And the world will be as one`
         title: 'Bohemian Rhapsody',
         duration: '5:55',
         audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-        lyrics: `Is this the real life?
-Is this just fantasy?
-Caught in a landslide
-No escape from reality
-
-Open your eyes
-Look up to the skies and see
-I'm just a poor boy
-I need no sympathy
-
-Because I'm easy come, easy go
-Little high, little low
-Any way the wind blows
-Doesn't really matter to me
-
-Mama, just killed a man
-Put a gun against his head
-Pulled my trigger, now he's dead
-
-Mama, life had just begun
-But now I've gone and thrown it all away
-
-Mama, ooh
-Didn't mean to make you cry
-If I'm not back again this time tomorrow
-Carry on, carry on
-As if nothing really matters`
+        lyrics: `[00:00.00]Is this the real life?
+[00:04.00]Is this just fantasy?
+[00:08.00]Caught in a landslide
+[00:12.00]No escape from reality
+[00:16.00]Open your eyes
+[00:20.00]Look up to the skies and see
+[00:24.00]I'm just a poor boy
+[00:28.00]I need no sympathy
+[00:32.00]Because I'm easy come, easy go
+[00:36.00]Little high, little low
+[00:40.00]Any way the wind blows
+[00:44.00]Doesn't really matter to me
+[00:48.00]Mama, just killed a man
+[00:52.00]Put a gun against his head
+[00:56.00]Pulled my trigger, now he's dead
+[01:00.00]Mama, life had just begun
+[01:04.00]But now I've gone and thrown it all away`
       },
       {
         id: '2-2',
@@ -129,30 +115,26 @@ As if nothing really matters`
         title: 'Hotel California',
         duration: '6:30',
         audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
-        lyrics: `On a dark desert highway
-Cool wind in my hair
-Warm smell of colitas
-Rising up through the air
-
-Up ahead in the distance
-I saw a shimmering light
-My head grew heavy and my sight grew dim
-I had to stop for the night
-
-There she stood in the doorway
-I heard the mission bell
-And I was thinking to myself
-This could be heaven or this could be hell
-
-Then she lit up a candle
-And she showed me the way
-There were voices down the corridor
-I thought I heard them say
-
-Welcome to the Hotel California
-Such a lovely place, such a lovely face
-Plenty of room at the Hotel California
-Any time of year, you can find it here`
+        lyrics: `[00:00.00]On a dark desert highway
+[00:05.00]Cool wind in my hair
+[00:10.00]Warm smell of colitas
+[00:15.00]Rising up through the air
+[00:20.00]Up ahead in the distance
+[00:25.00]I saw a shimmering light
+[00:30.00]My head grew heavy and my sight grew dim
+[00:35.00]I had to stop for the night
+[00:40.00]There she stood in the doorway
+[00:45.00]I heard the mission bell
+[00:50.00]And I was thinking to myself
+[00:55.00]This could be heaven or this could be hell
+[01:00.00]Then she lit up a candle
+[01:05.00]And she showed me the way
+[01:10.00]There were voices down the corridor
+[01:15.00]I thought I heard them say
+[01:20.00]Welcome to the Hotel California
+[01:25.00]Such a lovely place, such a lovely face
+[01:30.00]Plenty of room at the Hotel California
+[01:35.00]Any time of year, you can find it here`
       },
       {
         id: '3-2',
@@ -174,30 +156,24 @@ Any time of year, you can find it here`
         title: 'Stairway to Heaven',
         duration: '8:02',
         audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-        lyrics: `There's a lady who's sure
-All that glitters is gold
-And she's buying a stairway to heaven
-
-When she gets there she knows
-If the stores are all closed
-With a word she can get what she came for
-
-Ooh, ooh, and she's buying a stairway to heaven
-
-There's a sign on the wall
-But she wants to be sure
-'Cause you know sometimes words have two meanings
-
-In a tree by the brook
-There's a songbird who sings
-Sometimes all of our thoughts are misgiven
-
-Ooh, it makes me wonder
-Ooh, it makes me wonder
-
-There's a feeling I get
-When I look to the west
-And my spirit is crying for leaving`
+        lyrics: `[00:00.00]There's a lady who's sure
+[00:05.00]All that glitters is gold
+[00:10.00]And she's buying a stairway to heaven
+[00:16.00]When she gets there she knows
+[00:21.00]If the stores are all closed
+[00:26.00]With a word she can get what she came for
+[00:32.00]Ooh, ooh, and she's buying a stairway to heaven
+[00:40.00]There's a sign on the wall
+[00:45.00]But she wants to be sure
+[00:50.00]'Cause you know sometimes words have two meanings
+[00:56.00]In a tree by the brook
+[01:01.00]There's a songbird who sings
+[01:06.00]Sometimes all of our thoughts are misgiven
+[01:12.00]Ooh, it makes me wonder
+[01:18.00]Ooh, it makes me wonder
+[01:24.00]There's a feeling I get
+[01:29.00]When I look to the west
+[01:34.00]And my spirit is crying for leaving`
       },
       {
         id: '4-2',

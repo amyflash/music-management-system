@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSongById, getAllSongs } from '@/lib/musicData';
+import { parseLRC, getCurrentLyricIndex, type LyricLine } from '@/lib/lrcParser';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,16 +21,49 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [lyrics, setLyrics] = useState<LyricLine[]>([]);
+  const [currentLyricIndex, setCurrentLyricIndex] = useState(-1);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const lyricContainerRef = useRef<HTMLDivElement>(null);
 
   const song = getSongById(songId);
   const allSongs = getAllSongs();
+
+  // 解析 LRC 歌词
+  useEffect(() => {
+    if (song?.lyrics) {
+      const parsedLyrics = parseLRC(song.lyrics);
+      setLyrics(parsedLyrics);
+      setCurrentLyricIndex(-1);
+    }
+  }, [song]);
 
   useEffect(() => {
     if (!song) {
       router.push('/music');
     }
   }, [song, router]);
+
+  // 更新当前歌词索引
+  useEffect(() => {
+    if (lyrics.length > 0) {
+      const newIndex = getCurrentLyricIndex(lyrics, currentTime);
+      setCurrentLyricIndex(newIndex);
+    }
+  }, [currentTime, lyrics]);
+
+  // 自动滚动到当前歌词
+  useEffect(() => {
+    if (currentLyricIndex >= 0 && lyricContainerRef.current) {
+      const activeElement = lyricContainerRef.current.children[currentLyricIndex];
+      if (activeElement) {
+        activeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }
+  }, [currentLyricIndex]);
 
   const handleLogout = () => {
     logout();
@@ -101,6 +135,13 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const handleBackToAlbum = () => {
     if (song) {
       router.push(`/album/${song.albumId}`);
+    }
+  };
+
+  const handleLyricClick = (time: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
     }
   };
 
@@ -259,18 +300,33 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
           </Card>
 
           {/* 歌词卡片 */}
-          {song.lyrics && (
+          {song.lyrics && lyrics.length > 0 && (
             <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <FileText className="w-5 h-5 text-purple-600" />
                   <h3 className="text-lg font-bold text-gray-900">歌词</h3>
+                  {lyrics.length > 0 && (
+                    <span className="text-sm text-gray-500 ml-2">
+                      (支持点击歌词跳转)
+                    </span>
+                  )}
                 </div>
                 <ScrollArea className="h-96">
-                  <div className="pr-4">
-                    <pre className="whitespace-pre-wrap text-gray-700 leading-relaxed font-sans text-base">
-                      {song.lyrics}
-                    </pre>
+                  <div className="pr-4" ref={lyricContainerRef}>
+                    {lyrics.map((line, index) => (
+                      <div
+                        key={index}
+                        onClick={() => handleLyricClick(line.time)}
+                        className={`py-2 px-4 rounded-lg cursor-pointer transition-all duration-300 ${
+                          index === currentLyricIndex
+                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg scale-105 shadow-lg'
+                            : 'text-gray-700 hover:bg-purple-50 text-base'
+                        }`}
+                      >
+                        {line.text}
+                      </div>
+                    ))}
                   </div>
                 </ScrollArea>
               </div>
