@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect, use } from 'react';
+import { useState, useRef, useEffect, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSongById, getAllSongs } from '@/lib/storageManager';
 import { parseLRC, getCurrentLyricIndex, type LyricLine } from '@/lib/lrcParser';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
 import { ArrowLeft, Play, Pause, Volume2, SkipBack, SkipForward, User, LogOut, Music as MusicIcon, FileText, Upload as UploadIcon } from 'lucide-react';
 
@@ -27,8 +26,8 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const lyricContainerRef = useRef<HTMLDivElement>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const song = getSongById(songId);
-  const allSongs = getAllSongs();
+  const song = useMemo(() => getSongById(songId), [songId, refreshKey]);
+  const allSongs = useMemo(() => getAllSongs(), [refreshKey]);
 
   // 解析 LRC 歌词
   useEffect(() => {
@@ -37,13 +36,14 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
       setLyrics(parsedLyrics);
       setCurrentLyricIndex(-1);
     }
-  }, [song, refreshKey]);
+  }, [song?.lyrics, refreshKey]);
 
+  // 如果歌曲不存在，重定向到专辑列表
   useEffect(() => {
     if (!song) {
       router.push('/music');
     }
-  }, [song, router]);
+  }, [songId, router, refreshKey]);
 
   // 更新当前歌词索引
   useEffect(() => {
@@ -233,7 +233,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                 {/* 音频元素 */}
                 <audio
                   ref={audioRef}
-                  src={`/api/audio/${songId}`}
+                  src={song.audioUrl}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onEnded={() => {
@@ -321,7 +321,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                     </span>
                   )}
                 </div>
-                <ScrollArea className="h-96">
+                <div className="h-96 overflow-y-auto">
                   <div className="pr-4" ref={lyricContainerRef}>
                     {lyrics.map((line, index) => (
                       <div
@@ -337,7 +337,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                       </div>
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               </div>
             </Card>
           )}
