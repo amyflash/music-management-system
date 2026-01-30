@@ -25,9 +25,29 @@ export interface UploadFormData {
   songTitle: string;
   duration: string;
   audioFile: File | null;
+  audioUrl?: string;  // 上传后的 URL
   coverFile: File | null;
+  coverUrl?: string;  // 上传后的 URL
   lyrics?: string;
   year: string;
+}
+
+// 上传文件到服务器
+async function uploadFile(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error('文件上传失败');
+  }
+
+  const result = await response.json();
+  return result.url;
 }
 
 export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicDialogProps) {
@@ -54,12 +74,27 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
     setIsUploading(true);
 
     try {
-      // 这里可以实现实际的文件上传逻辑
-      // 例如上传到对象存储或服务器
-      await new Promise(resolve => setTimeout(resolve, 2000)); // 模拟上传
+      // 上传音频文件
+      let audioUrl = formData.audioUrl;
+      if (formData.audioFile) {
+        audioUrl = await uploadFile(formData.audioFile);
+      }
+
+      // 上传封面文件
+      let coverUrl = formData.coverUrl;
+      if (formData.coverFile) {
+        coverUrl = await uploadFile(formData.coverFile);
+      }
+
+      // 构建完整数据
+      const uploadData = {
+        ...formData,
+        audioUrl,
+        coverUrl,
+      };
 
       if (onUpload) {
-        onUpload(formData);
+        onUpload(uploadData);
       }
 
       // 重置表单
@@ -75,7 +110,7 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload }: UploadMusicD
       });
 
       onOpenChange(false);
-      alert('上传成功！');
+      alert('上传成功！文件已保存到 /public/uploads 目录');
     } catch (error) {
       console.error('上传失败:', error);
       alert('上传失败，请重试');
