@@ -2,23 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-// 写死的用户信息
-const USER = {
-  username: 'harrietlq',
-  password: '1q2w3e4r',
-  name: '音乐管理员'
-};
-
-// 验证 token
-function verifyToken(token: string): boolean {
-  try {
-    const decoded = Buffer.from(token, 'base64').toString();
-    const [username] = decoded.split('-');
-    return username === USER.username;
-  } catch {
-    return false;
-  }
-}
+// 简单的登录 token（单用户场景）
+const LOGGED_IN_TOKEN = 'LOGGED_IN';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,9 +17,9 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.substring(7); // 去掉 'Bearer ' 前缀
-    if (!verifyToken(token)) {
+    if (token !== LOGGED_IN_TOKEN) {
       return NextResponse.json(
-        { error: '无效的 token' },
+        { error: '未登录，请先登录' },
         { status: 401 }
       );
     }

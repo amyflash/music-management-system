@@ -9,23 +9,8 @@ const USER = {
   name: '音乐管理员'
 };
 
-// 生成简单的 token（基于用户名和时间戳）
-function generateToken(username: string): string {
-  const timestamp = Date.now();
-  const data = `${username}-${timestamp}`;
-  return Buffer.from(data).toString('base64');
-}
-
-// 验证 token（简单实现，生产环境应使用 JWT）
-function verifyToken(token: string): boolean {
-  try {
-    const decoded = Buffer.from(token, 'base64').toString();
-    const [username] = decoded.split('-');
-    return username === USER.username;
-  } catch {
-    return false;
-  }
-}
+// 简单的登录 token（单用户场景）
+const LOGGED_IN_TOKEN = 'LOGGED_IN';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -47,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const savedAuth = localStorage.getItem('isAuthenticated');
     const savedToken = localStorage.getItem('token');
 
-    if (savedAuth === 'true' && savedToken && verifyToken(savedToken)) {
+    if (savedAuth === 'true' && savedToken === LOGGED_IN_TOKEN) {
       setIsAuthenticated(true);
       setUser(USER);
       setToken(savedToken);
@@ -56,12 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (username: string, password: string): boolean => {
     if (username === USER.username && password === USER.password) {
-      const newToken = generateToken(username);
       setIsAuthenticated(true);
       setUser(USER);
-      setToken(newToken);
+      setToken(LOGGED_IN_TOKEN);
       localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('token', newToken);
+      localStorage.setItem('token', LOGGED_IN_TOKEN);
       return true;
     }
     return false;
