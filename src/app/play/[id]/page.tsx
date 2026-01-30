@@ -50,27 +50,39 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
     const loadLyrics = async () => {
       if (!song) return;
 
+      console.log('开始加载歌词:', {
+        songId: song.id,
+        hasLyrics: !!song.lyrics,
+        hasLyricsUrl: !!song.lyricsUrl,
+        lyricsUrl: song.lyricsUrl,
+      });
+
       let lyricsText: string | undefined;
 
       // 优先使用歌词 URL（用户上传的数据）
       if (song.lyricsUrl) {
         try {
+          console.log('尝试从URL加载歌词:', song.lyricsUrl);
           lyricsText = await loadLyricsFromUrl(song.lyricsUrl);
+          console.log('从URL加载歌词成功，长度:', lyricsText.length);
         } catch (error) {
-          console.error('加载歌词失败:', error);
+          console.error('从URL加载歌词失败:', error);
         }
       } else {
         // 使用歌词文本（静态数据）
         lyricsText = song.lyrics;
+        console.log('使用静态歌词，长度:', lyricsText?.length || 0);
       }
 
       if (lyricsText) {
         const parsedLyrics = parseLRC(lyricsText);
+        console.log('解析歌词成功，行数:', parsedLyrics.length);
         setLyrics(parsedLyrics);
         setCurrentLyricIndex(-1);
         // 清空歌词 refs 数组
         lyricItemRefs.current = [];
       } else {
+        console.log('没有歌词数据');
         setLyrics([]);
         setCurrentLyricIndex(-1);
       }
@@ -385,7 +397,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
           </Card>
 
           {/* 歌词卡片 */}
-          {song.lyrics && lyrics.length > 0 && (
+          {(song.lyrics || song.lyricsUrl) && lyrics.length > 0 && (
             <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-4">
@@ -421,6 +433,22 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* 无歌词提示 */}
+          {!isLoading && song && !song.lyrics && !song.lyricsUrl && (
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="w-5 h-5 text-gray-400" />
+                  <h3 className="text-lg font-bold text-gray-600">歌词</h3>
+                </div>
+                <div className="text-center py-12 text-gray-500">
+                  <p>暂无歌词</p>
+                  <p className="text-sm mt-2">可以通过编辑歌曲添加歌词文件</p>
                 </div>
               </div>
             </Card>
