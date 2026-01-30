@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { musicList, Music } from '@/lib/musicData';
@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Play, Pause, Volume2, SkipBack, SkipForward, User, LogOut, Music as MusicIcon } from 'lucide-react';
 
-export default function MusicDetailPage({ params }: { params: { id: string } }) {
+export default function MusicDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const musicId = resolvedParams.id;
   const { user, logout } = useAuth();
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -17,7 +19,7 @@ export default function MusicDetailPage({ params }: { params: { id: string } }) 
   const [volume, setVolume] = useState(1);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const music = musicList.find((m) => m.id === params.id);
+  const music = musicList.find((m) => m.id === musicId);
 
   useEffect(() => {
     if (!music) {
@@ -77,13 +79,13 @@ export default function MusicDetailPage({ params }: { params: { id: string } }) 
   };
 
   const playNext = () => {
-    const currentIndex = musicList.findIndex((m) => m.id === params.id);
+    const currentIndex = musicList.findIndex((m) => m.id === musicId);
     const nextIndex = (currentIndex + 1) % musicList.length;
     router.push(`/music/${musicList[nextIndex].id}`);
   };
 
   const playPrevious = () => {
-    const currentIndex = musicList.findIndex((m) => m.id === params.id);
+    const currentIndex = musicList.findIndex((m) => m.id === musicId);
     const prevIndex = currentIndex === 0 ? musicList.length - 1 : currentIndex - 1;
     router.push(`/music/${musicList[prevIndex].id}`);
   };
