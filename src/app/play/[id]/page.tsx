@@ -174,7 +174,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                 {/* 音频元素 */}
                 <audio
                   ref={audioRef}
-                  src={song.audioUrl}
+                  src={`/api/audio/${songId}`}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onEnded={() => {
