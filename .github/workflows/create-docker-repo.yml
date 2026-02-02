@@ -1,0 +1,68 @@
+name: Create Docker Hub Repository
+
+on:
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: amyflash/music-management-system
+
+jobs:
+  create-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Check if repository exists
+        id: check_repo
+        run: |
+          echo "Checking if repository ${{ env.DOCKER_IMAGE }} exists..."
+
+          # 尝试拉取镜像来检查仓库是否存在
+          if docker pull ${{ env.DOCKER_IMAGE }}:latest 2>/dev/null || [ $? -eq 1 ]; then
+            # 如果返回码是 1，可能是仓库不存在或镜像不存在
+            # 我们尝试创建一个空镜像来验证
+            echo "Repository check completed"
+          fi
+
+      - name: Create test image
+        run: |
+          echo "Creating test image to verify repository creation..."
+          echo "FROM alpine
+          LABEL maintainer=\"amyflash\"
+          LABEL description=\"Music Management System\"" | docker build -t ${{ env.DOCKER_IMAGE }}:init -
+
+      - name: Push init image (creates repository)
+        run: |
+          echo "Pushing init image to create repository..."
+          docker push ${{ env.DOCKER_IMAGE }}:init
+
+          if [ $? -eq 0 ]; then
+            echo "✅ Repository created successfully!"
+            echo "Repository URL: https://hub.docker.com/r/${{ env.DOCKER_IMAGE }}"
+          else
+            echo "❌ Failed to create repository"
+            exit 1
+          fi
+
+      - name: Cleanup
+        run: |
+          echo "Cleaning up..."
+          docker rmi ${{ env.DOCKER_IMAGE }}:init || true
+
+      - name: Output repository info
+        run: |
+          echo "========================================="
+          echo "✅ Docker Hub 仓库创建成功！"
+          echo "========================================="
+          echo ""
+          echo "仓库名称: ${{ env.DOCKER_IMAGE }}"
+          echo "仓库地址: https://hub.docker.com/r/${{ env.DOCKER_IMAGE }}"
+          echo ""
+          echo "下一步："
+          echo "1. 访问仓库页面确认"
+          echo "2. 触发主构建工作流"
+          echo "3. 等待构建完成"
