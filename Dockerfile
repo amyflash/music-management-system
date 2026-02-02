@@ -4,8 +4,9 @@ FROM node:20-alpine
 # 设置工作目录
 WORKDIR /app
 
-# 安装 pnpm
-RUN npm install -g pnpm
+# 安装 bash 和 pnpm
+RUN apk add --no-cache bash && \
+    npm install -g pnpm
 
 # 复制依赖文件
 COPY package.json pnpm-lock.yaml ./
