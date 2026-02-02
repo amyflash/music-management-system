@@ -14,7 +14,7 @@ export async function GET(
     console.log('[Audio API] Request for song ID:', songId);
 
     // 1. 获取歌曲信息
-    const song = getSongById(songId);
+    const song = await getSongById(songId);
 
     if (!song) {
       console.log('[Audio API] Song not found:', songId);
