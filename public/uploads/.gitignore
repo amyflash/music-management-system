@@ -1,0 +1,5 @@
+# 上传的文件
+public/uploads/*
+!public/uploads/.gitkeep
+
+# 保留 uploads 目录结构

@@ -505,13 +505,33 @@ coze-coding-ai db generate-models
 coze-coding-ai db upgrade
 ```
 
-### 5. 构建应用
+### 5. 配置文件上传目录
+
+⚠️ **重要**：文件上传功能需要创建 `public/uploads` 目录并设置正确的权限。
+
+```bash
+# 创建上传目录
+mkdir -p public/uploads
+
+# 设置目录权限（Linux/macOS）
+chmod 755 public/uploads
+
+# 或使用部署脚本
+bash scripts/pre-deploy.sh
+```
+
+**注意事项：**
+- 确保 `public/uploads` 目录有写权限
+- Vercel 等无服务器平台不支持文件持久化，建议使用对象存储（见 [DEPLOYMENT_UPLOAD.md](./DEPLOYMENT_UPLOAD.md)）
+- 上传的文件不会上传到 Git（已配置 .gitignore）
+
+### 6. 构建应用
 
 ```bash
 coze build
 ```
 
-### 6. 启动服务
+### 7. 启动服务
 
 ```bash
 coze start
@@ -519,7 +539,7 @@ coze start
 
 服务将运行在 http://localhost:5000
 
-### 7. 使用进程管理器（推荐）
+### 8. 使用进程管理器（推荐）
 
 使用 PM2 管理进程：
 
@@ -543,7 +563,7 @@ pm2 restart music-app
 pm2 stop music-app
 ```
 
-### 8. 配置 Nginx 反向代理（可选）
+### 9. 配置 Nginx 反向代理（可选）
 
 ```nginx
 server {
@@ -568,7 +588,7 @@ server {
 }
 ```
 
-### 9. 配置 HTTPS（可选）
+### 10. 配置 HTTPS（可选）
 
 使用 Let's Encrypt 配置 HTTPS：
 
@@ -612,6 +632,21 @@ sudo certbot renew --dry-run
 - 音频文件格式是否为 MP3
 - audioUrl 是否可访问
 - 浏览器是否支持音频播放
+
+### 5. 文件上传失败
+
+检查：
+- `public/uploads` 目录是否存在
+- 目录是否有写权限（`chmod 755 public/uploads`）
+- 查看服务器日志获取详细错误信息
+- Vercel 部署需要使用对象存储（见 [DEPLOYMENT_UPLOAD.md](./DEPLOYMENT_UPLOAD.md)）
+
+**快速修复：**
+```bash
+# 创建上传目录
+mkdir -p public/uploads
+chmod 755 public/uploads
+```
 
 ## 许可证
 
