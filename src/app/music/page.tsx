@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Disc, LogOut, User, Music as MusicIcon, Upload as UploadIcon, Trash2, Search } from 'lucide-react';
+import { Disc, LogOut, User, Music as MusicIcon, Upload as UploadIcon, Trash2, Search, Activity } from 'lucide-react';
 
 export default function MusicListPage() {
   const { user, logout } = useAuth();
@@ -122,7 +122,15 @@ export default function MusicListPage() {
             </h1>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/diagnostic/upload')}
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              诊断工具
+            </Button>
             <Button
               onClick={() => setUploadDialogOpen(true)}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"

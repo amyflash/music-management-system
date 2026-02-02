@@ -60,7 +60,14 @@ async function uploadFile(file: File, token: string): Promise<string> {
   }
 
   const result = await response.json();
-  return result.url;
+
+  // Serverless 环境可能返回 dataUrl 或 warning
+  if (result.isTemporary && result.warning) {
+    console.warn('[Upload] Serverless 环境:', result.warning);
+  }
+
+  // 返回 URL 或 dataUrl
+  return result.url || result.dataUrl || '';
 }
 
 export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }: UploadMusicDialogProps) {

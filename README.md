@@ -507,7 +507,69 @@ coze-coding-ai db upgrade
 
 ### 5. 配置文件上传目录
 
+#### 本地部署 / VPS 部署
+
 ⚠️ **重要**：文件上传功能需要创建 `public/uploads` 目录并设置正确的权限。
+
+```bash
+# 创建上传目录
+mkdir -p public/uploads
+
+# 设置目录权限（Linux/macOS）
+chmod 755 public/uploads
+
+# 或使用部署脚本
+bash scripts/pre-deploy.sh
+```
+
+**注意事项：**
+- 确保 `public/uploads` 目录有写权限
+- 上传的文件不会上传到 Git（已配置 .gitignore）
+
+#### Serverless 部署（Vercel / Netlify / 云平台）
+
+⚠️ **重要限制**：Serverless 环境**不支持文件系统持久化存储**。
+
+如果你的部署环境是 Serverless（如 Vercel、Netlify、云函数等），**不能使用本地文件存储**。
+
+**症状：**
+- 上传返回 500 错误
+- 文件上传后无法访问
+- 每次部署后文件丢失
+
+**解决方案：**
+必须使用对象存储服务（OSS/S3/COS），详见 [SERVERLESS_UPLOAD.md](./SERVERLESS_UPLOAD.md)
+
+**推荐方案：**
+
+1. **阿里云 OSS**（国内访问快）
+   - 价格：¥0.12/GB/月
+   - 配置：见 [SERVERLESS_UPLOAD.md](./SERVERLESS_UPLOAD.md)
+
+2. **腾讯云 COS**
+   - 价格：类似阿里云 OSS
+   - 配置：见 [SERVERLESS_UPLOAD.md](./SERVERLESS_UPLOAD.md)
+
+3. **AWS S3**
+   - 价格：$0.023/GB/月
+   - 配置：见 [SERVERLESS_UPLOAD.md](./SERVERLESS_UPLOAD.md)
+
+4. **免费方案（测试用）**
+   - ImgBB（仅图片）：https://imgbb.com/
+   - 限制：10MB，仅用于测试
+
+**快速诊断：**
+
+检查当前环境是否为 Serverless：
+```bash
+# 检查是否有 /tmp 目录
+ls -la /tmp
+
+# 尝试写入测试文件
+echo "test" > /tmp/test.txt && echo "支持文件写入" || echo "不支持文件写入"
+```
+
+如果你看到"不支持文件写入"，说明是 Serverless 环境，**必须使用对象存储**。
 
 ```bash
 # 创建上传目录
