@@ -66,8 +66,16 @@ async function uploadFile(file: File, token: string): Promise<string> {
     console.warn('[Upload] Serverless 环境:', result.warning);
   }
 
+  // 如果是本地环境，将 /uploads/ 转换为 /api/files/ 以确保能访问文件
+  let fileUrl = result.url || result.dataUrl || '';
+  if (fileUrl.startsWith('/uploads/')) {
+    const fileName = fileUrl.replace('/uploads/', '');
+    fileUrl = `/api/files/${fileName}`;
+    console.log('[Upload] 转换文件 URL:', result.url, '->', fileUrl);
+  }
+
   // 返回 URL 或 dataUrl
-  return result.url || result.dataUrl || '';
+  return fileUrl;
 }
 
 export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }: UploadMusicDialogProps) {

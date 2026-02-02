@@ -79,9 +79,32 @@ export function lyricsToLRC(lyrics: LyricLine[]): string {
  * @returns 歌词文本内容
  */
 export async function loadLyricsFromUrl(lyricsUrl: string): Promise<string> {
-  const response = await fetch(lyricsUrl);
-  if (!response.ok) {
-    throw new Error('加载歌词失败');
+  console.log('[LRC] 开始加载歌词:', lyricsUrl);
+
+  // 兼容旧数据：将 /uploads/ 转换为 /api/files/
+  let actualUrl = lyricsUrl;
+  if (actualUrl.startsWith('/uploads/')) {
+    const fileName = actualUrl.replace('/uploads/', '');
+    actualUrl = `/api/files/${fileName}`;
+    console.log('[LRC] 转换歌词 URL:', lyricsUrl, '->', actualUrl);
   }
-  return await response.text();
+
+  console.log('[LRC] 请求歌词 URL:', actualUrl);
+
+  const response = await fetch(actualUrl);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[LRC] 歌词加载失败:', {
+      url: actualUrl,
+      status: response.status,
+      statusText: response.statusText,
+      error: errorText
+    });
+    throw new Error(`加载歌词失败 (${response.status}: ${response.statusText})`);
+  }
+
+  const text = await response.text();
+  console.log('[LRC] 歌词加载成功，长度:', text.length);
+  return text;
 }
