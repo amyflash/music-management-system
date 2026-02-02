@@ -338,6 +338,30 @@ chmod 755 public/uploads
 
 ---
 
+## 🚀 Docker 一键部署（推荐 VPS）
+
+如果你想在 VPS 服务器上快速部署，推荐使用我们的 Docker 一键部署方案：
+
+```bash
+# 克隆项目
+git clone <your-repo-url> music-system
+cd music-system
+
+# 一键部署
+bash deploy.sh
+```
+
+**优势：**
+- ✅ 自动创建 uploads 目录
+- ✅ 自动配置文件权限
+- ✅ 自动初始化数据库
+- ✅ 一键备份和恢复
+- ✅ 支持容器化部署
+
+**详细文档：** [DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)
+
+---
+
 ## 联系支持
 
 如果问题仍然存在，请提供：

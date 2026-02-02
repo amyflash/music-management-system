@@ -429,6 +429,67 @@ coze build
 coze start
 ```
 
+---
+
+## 🚀 Docker 一键部署（推荐 VPS 部署）
+
+如果你想在 VPS 服务器上部署，推荐使用 Docker 方式，更加简单和稳定。
+
+### 前置要求
+
+- Docker 20.10+
+- Docker Compose 1.29+
+- 1GB+ 内存
+- 20GB+ 磁盘空间
+
+### 快速部署
+
+```bash
+# 1. 克隆项目
+git clone <your-repo-url> music-system
+cd music-system
+
+# 2. 运行一键部署脚本
+chmod +x deploy.sh
+bash deploy.sh
+
+# 3. 访问应用
+# 本地: http://localhost:5000
+# 外网: http://your-server-ip:5000
+```
+
+**默认登录信息:**
+- 用户名: `admin`
+- 密码: `admin123`
+
+### 常用命令
+
+```bash
+# 查看服务状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重启服务
+docker-compose restart
+
+# 备份数据
+bash backup.sh
+
+# 更新应用
+bash update.sh
+```
+
+### 详细文档
+
+完整的 Docker 部署文档请查看：[DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)
+
+---
+
 ## 开发规范
 
 ### 组件开发

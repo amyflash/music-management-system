@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: music-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-musicuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-musicpass}
+      POSTGRES_DB: ${DB_NAME:-musicdb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-musicuser} -d ${DB_NAME:-musicdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Next.js 应用
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: music-app
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-musicuser}:${DB_PASSWORD:-musicpass}@postgres:5432/${DB_NAME:-musicdb}
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./public/uploads:/app/public/uploads
+    networks:
+      - music-network
+
+networks:
+  music-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

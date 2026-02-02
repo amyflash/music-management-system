@@ -96,4 +96,14 @@ Desktop.ini
 .vercel
 .turbo
 
+# Coze logs
 .coze-logs
+
+# Uploaded files (ignore files but keep directory structure)
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Backups
+backups/
+*.backup.sql
+*.backup.tar.gz
