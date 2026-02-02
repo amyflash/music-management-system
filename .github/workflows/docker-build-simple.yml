@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_IMAGE: your-username/music-management-system
+  DOCKER_IMAGE: amyflash/music-management-system
 
 jobs:
   build:
