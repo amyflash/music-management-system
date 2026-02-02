@@ -492,6 +492,69 @@ bash update.sh
 
 ---
 
+## 🚀 GitHub Actions 自动部署（推荐）
+
+使用 GitHub Actions 自动构建并推送到 Docker Hub，无需在 VPS 上构建。
+
+### 优势
+
+- ✅ 不消耗 VPS 资源
+- ✅ 自动构建和推送
+- ✅ 多平台支持（amd64/arm64）
+- ✅ 构建缓存加速
+- ✅ 免费使用
+
+### 快速开始
+
+1. **配置 Docker Hub Secrets**
+
+在 GitHub 仓库 → Settings → Secrets and variables → Actions 中添加：
+
+- `DOCKER_USERNAME`: Docker Hub 用户名
+- `DOCKER_PASSWORD`: Docker Hub Access Token
+
+2. **修改镜像名称**
+
+编辑 `.github/workflows/docker-build-simple.yml`:
+
+```yaml
+env:
+  DOCKER_IMAGE: your-username/music-management-system
+```
+
+3. **提交代码**
+
+```bash
+git add .github/workflows/
+git commit -m "feat: 添加 GitHub Actions"
+git push origin main
+```
+
+4. **在 VPS 上拉取镜像**
+
+修改 `docker-compose.yml`:
+
+```yaml
+services:
+  app:
+    image: your-username/music-management-system:latest
+    # 注释掉 build 部分
+```
+
+然后：
+
+```bash
+docker compose pull app
+docker compose up -d
+```
+
+### 详细文档
+
+- [GitHub Actions 配置指南](./GITHUB_ACTIONS_GUIDE.md)
+- [Docker Hub 部署说明](./DOCKER_HUB_DEPLOYMENT.md)
+
+---
+
 ## 开发规范
 
 ### 组件开发
