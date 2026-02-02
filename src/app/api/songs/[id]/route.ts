@@ -4,10 +4,10 @@ import getPool from '@/lib/db';
 // GET /api/songs/[id] - 获取歌曲详情
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const result = await getPool().query(
       `SELECT
@@ -53,10 +53,10 @@ export async function GET(
 // PUT /api/songs/[id] - 更新歌曲
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { albumId, title, duration, audioUrl, lyricsUrl } = body;
 
@@ -151,10 +151,10 @@ export async function PUT(
 // DELETE /api/songs/[id] - 删除歌曲
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // 检查歌曲是否存在
     const checkResult = await getPool().query(

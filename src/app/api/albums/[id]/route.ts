@@ -4,10 +4,10 @@ import getPool from '@/lib/db';
 // GET /api/albums/[id] - 获取专辑详情（包含歌曲）
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // 获取专辑信息
     const albumResult = await getPool().query(
@@ -75,10 +75,10 @@ export async function GET(
 // PUT /api/albums/[id] - 更新专辑
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { title, artist, year, coverUrl } = body;
 
@@ -168,10 +168,10 @@ export async function PUT(
 // DELETE /api/albums/[id] - 删除专辑
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // 检查专辑是否存在
     const checkResult = await getPool().query(
