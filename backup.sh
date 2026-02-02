@@ -11,6 +11,16 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# 检测 Docker Compose 命令
+if docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+else
+    echo -e "${YELLOW}[WARNING]${NC} 未找到 Docker Compose"
+    exit 1
+fi
+
 # 配置
 BACKUP_DIR="./backups"
 DATE=$(date +%Y%m%d_%H%M%S)
@@ -23,7 +33,7 @@ mkdir -p ${BACKUP_DIR}
 
 # 备份数据库
 echo -e "${BLUE}[INFO]${NC} 备份数据库..."
-docker-compose exec -T postgres pg_dump -U musicuser musicdb > ${BACKUP_FILE}
+${DOCKER_COMPOSE_CMD} exec -T postgres pg_dump -U musicuser musicdb > ${BACKUP_FILE}
 
 # 压缩备份文件
 gzip ${BACKUP_FILE}
@@ -38,4 +48,4 @@ echo "备份文件: ${BACKUP_FILE}"
 echo ""
 echo "恢复命令:"
 echo "  gunzip ${BACKUP_FILE}"
-echo "  docker-compose exec -T postgres psql -U musicuser musicdb < ${BACKUP_FILE%.gz}"
+echo "  ${DOCKER_COMPOSE_CMD} exec -T postgres psql -U musicuser musicdb < ${BACKUP_FILE%.gz}"

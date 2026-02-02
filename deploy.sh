@@ -12,6 +12,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Docker Compose 命令（V2 优先，V1 兼容）
+DOCKER_COMPOSE_CMD=""
+
 # 打印信息函数
 print_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -51,14 +54,17 @@ check_requirements() {
         exit 1
     fi
 
-    # 检查 Docker Compose
-    if command_exists docker-compose; then
-        print_success "Docker Compose 已安装: $(docker-compose --version)"
-    elif docker compose version >/dev/null 2>&1; then
-        print_success "Docker Compose (Plugin) 已安装: $(docker compose version)"
+    # 检查 Docker Compose (V2 优先)
+    if docker compose version >/dev/null 2>&1; then
+        print_success "Docker Compose (V2) 已安装: $(docker compose version)"
+        export DOCKER_COMPOSE_CMD="docker compose"
+    elif command_exists docker-compose; then
+        print_success "Docker Compose (V1) 已安装: $(docker-compose --version)"
+        print_warning "建议升级到 Docker Compose V2: docker compose version"
+        export DOCKER_COMPOSE_CMD="docker-compose"
     else
         print_error "Docker Compose 未安装，请先安装 Docker Compose"
-        echo "安装命令: pip install docker-compose 或 apt install docker-compose"
+        echo "安装命令: apt install docker-compose-plugin"
         exit 1
     fi
 
@@ -125,7 +131,7 @@ build_app() {
     print_step "构建应用"
 
     print_info "构建 Docker 镜像..."
-    docker-compose build
+    ${DOCKER_COMPOSE_CMD} build
 
     print_success "应用构建完成"
 }
@@ -135,7 +141,7 @@ start_services() {
     print_step "启动服务"
 
     print_info "启动 Docker 容器..."
-    docker-compose up -d
+    ${DOCKER_COMPOSE_CMD} up -d
 
     print_success "服务已启动"
 }
@@ -152,7 +158,7 @@ wait_for_services() {
     attempt=0
 
     while [ $attempt -lt $max_attempts ]; do
-        if docker-compose exec -T postgres pg_isready -U musicuser -d musicdb >/dev/null 2>&1; then
+        if ${DOCKER_COMPOSE_CMD} exec -T postgres pg_isready -U musicuser -d musicdb >/dev/null 2>&1; then
             print_success "数据库已就绪"
             break
         fi
@@ -188,7 +194,7 @@ wait_for_services() {
 
     if [ $attempt -eq $max_attempts ]; then
         print_error "应用启动超时"
-        print_info "请查看日志: docker-compose logs app"
+        print_info "请查看日志: ${DOCKER_COMPOSE_CMD} logs app"
         exit 1
     fi
 }
@@ -198,7 +204,7 @@ show_status() {
     print_step "服务状态"
 
     echo ""
-    docker-compose ps
+    ${DOCKER_COMPOSE_CMD} ps
     echo ""
 }
 
@@ -218,14 +224,14 @@ show_access_info() {
     echo "  密码: admin123"
     echo ""
     echo "常用命令:"
-    echo "  查看日志: docker-compose logs -f"
-    echo "  停止服务: docker-compose down"
-    echo "  重启服务: docker-compose restart"
-    echo "  查看状态: docker-compose ps"
+    echo "  查看日志: ${DOCKER_COMPOSE_CMD} logs -f"
+    echo "  停止服务: ${DOCKER_COMPOSE_CMD} down"
+    echo "  重启服务: ${DOCKER_COMPOSE_CMD} restart"
+    echo "  查看状态: ${DOCKER_COMPOSE_CMD} ps"
     echo ""
     echo "数据备份:"
-    echo "  备份数据库: docker-compose exec postgres pg_dump -U musicuser musicdb > backup.sql"
-    echo "  恢复数据库: docker-compose exec -T postgres psql -U musicuser musicdb < backup.sql"
+    echo "  备份数据库: ${DOCKER_COMPOSE_CMD} exec postgres pg_dump -U musicuser musicdb > backup.sql"
+    echo "  恢复数据库: ${DOCKER_COMPOSE_CMD} exec -T postgres psql -U musicuser musicdb < backup.sql"
     echo ""
     echo "配置文件:"
     echo "  环境变量: .env"

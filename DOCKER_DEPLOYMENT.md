@@ -2,6 +2,23 @@
 
 本指南帮助你使用 Docker 在 VPS 服务器上一键部署音乐管理系统。
 
+## 版本说明
+
+**推荐使用 Docker Compose V2**
+- 命令格式：`docker compose`（空格而不是连字符）
+- 检测命令：`docker compose version`
+- 安装命令：`apt install docker-compose-plugin`
+
+**兼容 Docker Compose V1**
+- 命令格式：`docker-compose`（连字符）
+- 检测命令：`docker-compose --version`
+- 注意：V1 已被废弃，建议升级到 V2
+
+**本指南中的命令默认使用 V2 格式 `docker compose`**
+- 如果使用 V1，请将 `docker compose` 替换为 `docker-compose`
+
+---
+
 ## 目录
 
 - [系统要求](#系统要求)
@@ -29,7 +46,14 @@
 
 - **操作系统**: Linux (Ubuntu 20.04+, CentOS 7+, Debian 10+)
 - **Docker**: 20.10 或更高版本
-- **Docker Compose**: 1.29 或更高版本
+- **Docker Compose**: V2 插件（推荐）或 V1.29+
+
+**检查 Docker Compose 版本：**
+```bash
+docker compose version  # V2 插件
+# 或
+docker-compose --version  # V1（已废弃）
+```
 
 ---
 
@@ -43,9 +67,12 @@
 # 安装 Docker
 curl -fsSL https://get.docker.com | sh
 
-# 安装 Docker Compose
+# 安装 Docker Compose V2 插件（推荐）
 sudo apt-get update
-sudo apt-get install docker-compose
+sudo apt-get install docker-compose-plugin
+
+# 或者安装 Docker Compose V1（已废弃）
+# sudo apt-get install docker-compose
 
 # 启动 Docker 服务
 sudo systemctl start docker
@@ -64,13 +91,24 @@ sudo yum install -y yum-utils
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 sudo yum install -y docker-ce docker-ce-cli containerd.io
 
+# 安装 Docker Compose V2 插件（推荐）
+sudo yum install -y docker-compose-plugin
+
+# 或者安装 Docker Compose V1（已废弃）
+# sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+# sudo chmod +x /usr/local/bin/docker-compose
+
 # 启动 Docker 服务
 sudo systemctl start docker
 sudo systemctl enable docker
+```
 
-# 安装 Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+**验证安装：**
+```bash
+docker --version
+docker compose version  # V2
+# 或
+docker-compose --version  # V1
 ```
 
 ### 2. 克隆项目

@@ -3,8 +3,10 @@
 ## 前提条件
 
 - 一台 VPS 服务器（推荐配置：2核2G，20GB 磁盘）
-- 服务器已安装 Docker 和 Docker Compose
+- 服务器已安装 Docker 和 Docker Compose V2
 - SSH 访问权限
+
+**注意：** 本指南使用 Docker Compose V2 命令格式 `docker compose`。如果使用 V1，请替换为 `docker-compose`。
 
 ## 三步部署
 
@@ -17,17 +19,25 @@ ssh root@your-server-ip
 ### 2. 安装 Docker（如果未安装）
 
 ```bash
+# 安装 Docker
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 newgrp docker
+
+# 安装 Docker Compose V2 插件（推荐）
+sudo apt-get update
+sudo apt-get install docker-compose-plugin
+
+# 验证安装
+docker compose version
 ```
 
 ### 3. 一键部署
 
 ```bash
 # 克隆项目
-git clone <your-repo-url> music-system
-cd music-system
+git clone https://github.com/amyflash/music-management-system.git
+cd music-management-system
 
 # 运行部署脚本
 bash deploy.sh
@@ -44,18 +54,20 @@ bash deploy.sh
 
 ## 常用命令
 
+**注意：** 以下命令使用 Docker Compose V2 格式。如果使用 V1，请将 `docker compose` 替换为 `docker-compose`。
+
 ```bash
 # 查看服务状态
-docker-compose ps
+docker compose ps
 
 # 查看日志
-docker-compose logs -f
+docker compose logs -f
 
 # 停止服务
-docker-compose down
+docker compose down
 
 # 重启服务
-docker-compose restart
+docker compose restart
 
 # 备份数据
 bash backup.sh
@@ -99,13 +111,13 @@ sudo certbot --nginx -d your-domain.com
 
 ```bash
 # 检查服务状态
-docker-compose ps
+docker compose ps
 
 # 检查端口监听
 netstat -tuln | grep 5000
 
 # 查看日志
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ### 磁盘空间不足
@@ -122,10 +134,10 @@ find backups/ -name "*.gz" -mtime +30 -delete
 
 ```bash
 # 重启数据库
-docker-compose restart postgres
+docker compose restart postgres
 
 # 查看数据库日志
-docker-compose logs postgres
+docker compose logs postgres
 ```
 
 ## 数据迁移
@@ -151,7 +163,7 @@ bash deploy.sh
 
 # 恢复数据库
 gunzip backups/music_backup_*.sql.gz
-docker-compose exec -T postgres psql -U musicuser musicdb < backups/music_backup_*.sql
+docker compose exec -T postgres psql -U musicuser musicdb < backups/music_backup_*.sql
 
 # 恢复上传文件
 tar -xzf uploads.tar.gz
@@ -186,7 +198,7 @@ du -sh /var/lib/docker/volumes/
 docker system df
 
 # 应用日志
-docker-compose logs --tail 100 app
+docker compose logs --tail 100 app
 ```
 
 ## 性能优化
@@ -212,18 +224,25 @@ services:
 
 遇到问题？
 
-1. 查看日志：`docker-compose logs -f`
+1. 查看日志：`docker compose logs -f`
 2. 检查文档：[README.md](./README.md)
 3. 查看详细部署文档：[DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)
-4. 提交 Issue：项目仓库
+4. 查看 V2 升级说明：[DOCKER_COMPOSE_V2.md](./DOCKER_COMPOSE_V2.md)
+5. 提交 Issue：项目仓库
 
 ## 更新日志
+
+### 版本 1.1.0 (2024-02-02)
+
+- ✅ 支持 Docker Compose V2
+- ✅ 自动检测并使用 V2/V1
+- ✅ 优化 docker-compose.yml 配置
+- ✅ 添加健康检查和自动重启
 
 ### 版本 1.0.0 (2024-01-30)
 
 - ✅ Docker 一键部署
 - ✅ 自动数据库初始化
-- ✅ 自动备份脚本
 - ✅ 支持 VPS 部署
 - ✅ 支持文件上传
 - ✅ 支持歌词同步显示

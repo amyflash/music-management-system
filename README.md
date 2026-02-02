@@ -466,16 +466,16 @@ bash deploy.sh
 
 ```bash
 # 查看服务状态
-docker-compose ps
+docker compose ps
 
 # 查看日志
-docker-compose logs -f
+docker compose logs -f
 
 # 停止服务
-docker-compose down
+docker compose down
 
 # 重启服务
-docker-compose restart
+docker compose restart
 
 # 备份数据
 bash backup.sh
@@ -483,6 +483,8 @@ bash backup.sh
 # 更新应用
 bash update.sh
 ```
+
+**注意：** 如果使用 Docker Compose V1，请将 `docker compose` 替换为 `docker-compose`
 
 ### 详细文档
 
