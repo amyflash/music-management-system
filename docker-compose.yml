@@ -22,9 +22,14 @@ services:
 
   # Next.js 应用
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # 选项 1：使用 Docker Hub 镜像（推荐，避免 VPS 构建内存不足）
+    image: harrietlq1984/music-management-system:latest
+
+    # 选项 2：本地构建（取消注释以下内容）
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+
     container_name: music-app
     restart: always
     ports:

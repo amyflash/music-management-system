@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_IMAGE: amyflash/music-management-system
+  DOCKER_IMAGE: harrietlq1984/music-management-system
 
 jobs:
   create-repo:
@@ -32,7 +32,7 @@ jobs:
         run: |
           echo "Creating test image to verify repository creation..."
           echo "FROM alpine
-          LABEL maintainer=\"amyflash\"
+          LABEL maintainer=\"harrietlq1984\"
           LABEL description=\"Music Management System\"" | docker build -t ${{ env.DOCKER_IMAGE }}:init -
 
       - name: Push init image (creates repository)
