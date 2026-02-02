@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import getPool from '@/lib/db';
 
 // GET /api/albums - 获取所有专辑
 export async function GET() {
   try {
-    const result = await pool.query(
+    const result = await getPool().query(
       `SELECT
         id,
         title,
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await pool.query(
+    const result = await getPool().query(
       `INSERT INTO albums (title, artist, year, cover_url)
        VALUES ($1, $2, $3, $4)
        RETURNING

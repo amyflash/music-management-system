@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import getPool from '@/lib/db';
 
 // GET /api/songs/[id] - 获取歌曲详情
 export async function GET(
@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { id } = params;
 
-    const result = await pool.query(
+    const result = await getPool().query(
       `SELECT
         id,
         album_id as "albumId",
@@ -61,7 +61,7 @@ export async function PUT(
     const { albumId, title, duration, audioUrl, lyricsUrl } = body;
 
     // 检查歌曲是否存在
-    const checkResult = await pool.query(
+    const checkResult = await getPool().query(
       'SELECT id FROM songs WHERE id = $1',
       [id]
     );
@@ -130,7 +130,7 @@ export async function PUT(
         updated_at as "updatedAt"
     `;
 
-    const result = await pool.query(query, values);
+    const result = await getPool().query(query, values);
 
     return NextResponse.json({
       success: true,
@@ -157,7 +157,7 @@ export async function DELETE(
     const { id } = params;
 
     // 检查歌曲是否存在
-    const checkResult = await pool.query(
+    const checkResult = await getPool().query(
       'SELECT id FROM songs WHERE id = $1',
       [id]
     );
@@ -173,7 +173,7 @@ export async function DELETE(
     }
 
     // 删除歌曲
-    await pool.query('DELETE FROM songs WHERE id = $1', [id]);
+    await getPool().query('DELETE FROM songs WHERE id = $1', [id]);
 
     return NextResponse.json({
       success: true,

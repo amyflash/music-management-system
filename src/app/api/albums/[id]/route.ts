@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import getPool from '@/lib/db';
 
 // GET /api/albums/[id] - 获取专辑详情（包含歌曲）
 export async function GET(
@@ -10,7 +10,7 @@ export async function GET(
     const { id } = params;
 
     // 获取专辑信息
-    const albumResult = await pool.query(
+    const albumResult = await getPool().query(
       `SELECT
         id,
         title,
@@ -35,7 +35,7 @@ export async function GET(
     }
 
     // 获取专辑的歌曲
-    const songsResult = await pool.query(
+    const songsResult = await getPool().query(
       `SELECT
         id,
         album_id as "albumId",
@@ -83,7 +83,7 @@ export async function PUT(
     const { title, artist, year, coverUrl } = body;
 
     // 检查专辑是否存在
-    const checkResult = await pool.query(
+    const checkResult = await getPool().query(
       'SELECT id FROM albums WHERE id = $1',
       [id]
     );
@@ -147,7 +147,7 @@ export async function PUT(
         updated_at as "updatedAt"
     `;
 
-    const result = await pool.query(query, values);
+    const result = await getPool().query(query, values);
 
     return NextResponse.json({
       success: true,
@@ -174,7 +174,7 @@ export async function DELETE(
     const { id } = params;
 
     // 检查专辑是否存在
-    const checkResult = await pool.query(
+    const checkResult = await getPool().query(
       'SELECT id FROM albums WHERE id = $1',
       [id]
     );
@@ -190,7 +190,7 @@ export async function DELETE(
     }
 
     // 删除专辑（由于有外键约束，会级联删除歌曲）
-    await pool.query('DELETE FROM albums WHERE id = $1', [id]);
+    await getPool().query('DELETE FROM albums WHERE id = $1', [id]);
 
     return NextResponse.json({
       success: true,

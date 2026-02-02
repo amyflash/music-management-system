@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import getPool from '@/lib/db';
 
 // GET /api/songs - 获取所有歌曲（可选按专辑ID过滤）
 export async function GET(request: NextRequest) {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     query += ' ORDER BY created_at ASC';
 
-    const result = await pool.query(query, params);
+    const result = await getPool().query(query, params);
 
     return NextResponse.json({
       success: true,
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查专辑是否存在
-    const albumCheck = await pool.query(
+    const albumCheck = await getPool().query(
       'SELECT id FROM albums WHERE id = $1',
       [albumId]
     );
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await pool.query(
+    const result = await getPool().query(
       `INSERT INTO songs (album_id, title, duration, audio_url, lyrics_url)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING
