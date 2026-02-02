@@ -1,21 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { albumManager } from '@/storage/database';
-import type { InsertAlbum } from '@/storage/database';
+import pool from '@/lib/db';
 
 // GET /api/albums - 获取所有专辑
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const search = searchParams.get('search') || '';
-    const skip = parseInt(searchParams.get('skip') || '0');
-    const limit = parseInt(searchParams.get('limit') || '100');
+    const result = await pool.query(
+      `SELECT
+        id,
+        title,
+        artist,
+        year,
+        cover_url as "coverUrl",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM albums
+      ORDER BY created_at DESC`
+    );
 
-    const albums = await albumManager.getAlbums({ search, skip, limit });
-    return NextResponse.json({ albums });
+    return NextResponse.json({
+      success: true,
+      albums: result.rows,
+      count: result.rowCount,
+    });
   } catch (error) {
-    console.error('获取专辑失败:', error);
+    console.error('获取专辑列表失败:', error);
     return NextResponse.json(
-      { error: '获取专辑失败' },
+      {
+        success: false,
+        error: '获取专辑列表失败',
+      },
       { status: 500 }
     );
   }
@@ -25,19 +38,44 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const albumData: InsertAlbum = {
-      title: body.title,
-      artist: body.artist,
-      year: body.year,
-      coverUrl: body.coverUrl,
-    };
+    const { title, artist, year, coverUrl } = body;
 
-    const album = await albumManager.createAlbum(albumData);
-    return NextResponse.json({ album }, { status: 201 });
+    // 验证必填字段
+    if (!title || !artist || !year) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '缺少必填字段：title, artist, year',
+        },
+        { status: 400 }
+      );
+    }
+
+    const result = await pool.query(
+      `INSERT INTO albums (title, artist, year, cover_url)
+       VALUES ($1, $2, $3, $4)
+       RETURNING
+         id,
+         title,
+         artist,
+         year,
+         cover_url as "coverUrl",
+         created_at as "createdAt",
+         updated_at as "updatedAt"`,
+      [title, artist, year, coverUrl || null]
+    );
+
+    return NextResponse.json({
+      success: true,
+      album: result.rows[0],
+    });
   } catch (error) {
     console.error('创建专辑失败:', error);
     return NextResponse.json(
-      { error: '创建专辑失败' },
+      {
+        success: false,
+        error: '创建专辑失败',
+      },
       { status: 500 }
     );
   }
