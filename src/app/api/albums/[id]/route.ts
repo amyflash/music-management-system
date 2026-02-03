@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import getPool from '@/lib/db';
+import { requireAuthSync } from '@/lib/auth';
 
 // GET /api/albums/[id] - 获取专辑详情（包含歌曲）
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // 检查认证
+  const authError = requireAuthSync(request);
+  if (authError) return authError;
+
   try {
     const { id } = await params;
 
@@ -77,6 +82,10 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // 检查认证
+  const authError = requireAuthSync(request);
+  if (authError) return authError;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -170,6 +179,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // 检查认证
+  const authError = requireAuthSync(request);
+  if (authError) return authError;
+
   try {
     const { id } = await params;
 

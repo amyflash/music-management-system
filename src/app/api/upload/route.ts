@@ -1,34 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuthSync } from '@/lib/auth';
 
 export const runtime = 'nodejs';
-
-// 简单的登录 token（单用户场景）
-const LOGGED_IN_TOKEN = 'LOGGED_IN';
 
 export async function POST(request: NextRequest) {
   try {
     console.log('[Upload] 开始处理文件上传请求');
 
     // 1. 鉴权检查
-    const authHeader = request.headers.get('authorization');
-    console.log('[Upload] 鉴权检查:', authHeader ? '有 token' : '无 token');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.error('[Upload] 未授权访问：缺少或格式错误的 Authorization header');
-      return NextResponse.json(
-        { error: '未授权访问' },
-        { status: 401 }
-      );
+    const authError = requireAuthSync(request);
+    if (authError) {
+      console.error('[Upload] 未授权访问');
+      return authError;
     }
 
-    const token = authHeader.substring(7); // 去掉 'Bearer ' 前缀
-    if (token !== LOGGED_IN_TOKEN) {
-      console.error('[Upload] Token 验证失败:', token);
-      return NextResponse.json(
-        { error: '未登录，请先登录' },
-        { status: 401 }
-      );
-    }
+    console.log('[Upload] 鉴权通过');
 
     // 2. 处理文件上传
     const formData = await request.formData();
