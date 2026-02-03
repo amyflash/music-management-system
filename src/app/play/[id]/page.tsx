@@ -265,7 +265,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
             <div className="p-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
               <MusicIcon className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent hidden sm:block">
               音乐管理
             </h1>
           </div>
