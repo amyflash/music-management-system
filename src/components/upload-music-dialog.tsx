@@ -86,7 +86,7 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
     albumYear: new Date().getFullYear().toString(),
     albumCoverFile: null,
     songTitle: '',
-    songDuration: '3:30',
+    songDuration: '3:30',  // 默认时长，用户无需输入
     songAudioFile: null,
   });
   const [isUploading, setIsUploading] = useState(false);
@@ -261,16 +261,7 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="songDuration">时长</Label>
-                <Input
-                  id="songDuration"
-                  value={formData.songDuration}
-                  onChange={(e) => setFormData({ ...formData, songDuration: e.target.value })}
-                  placeholder="3:45"
-                />
-              </div>
-              <div className="space-y-2">
+              <div className="space-y-2 col-span-2">
                 <Label htmlFor="songAudioFile">音频文件 (MP3)</Label>
                 <Input
                   id="songAudioFile"
