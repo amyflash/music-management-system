@@ -18,8 +18,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// PHP 后端接口地址
-const API_BASE_URL = 'https://auth.516768.xyz/login.php';
+//后端接口地址
+const API_BASE_URL = 'https://auth.516768.xyz/api/login';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
