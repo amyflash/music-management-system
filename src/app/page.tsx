@@ -17,9 +17,9 @@ export default function Home() {
   }, [isAuthenticated, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-red-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-teal-50 to-emerald-50">
       <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
         <p className="mt-4 text-gray-600">正在跳转...</p>
       </div>
     </div>

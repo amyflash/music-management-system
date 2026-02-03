@@ -146,7 +146,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
 
   if (!album) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-red-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-emerald-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">专辑未找到</h2>
           <Button onClick={() => router.push('/music')} className="mt-4">
@@ -158,15 +158,15 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-red-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-emerald-50">
       {/* 顶部导航栏 */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
+            <div className="p-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
               <MusicIcon className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
               音乐管理
             </h1>
           </div>
@@ -174,7 +174,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
           <div className="flex items-center space-x-4">
             <Button
               onClick={() => setUploadDialogOpen(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600"
             >
               <UploadIcon className="w-4 h-4 mr-2" />
               添加歌曲
@@ -202,7 +202,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
           <Button
             variant="ghost"
             onClick={() => router.push('/music')}
-            className="text-gray-700 hover:text-purple-600"
+            className="text-gray-700 hover:text-green-600"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             返回专辑列表
@@ -210,7 +210,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
           <Button
             onClick={handleEditAlbum}
             variant="outline"
-            className="border-purple-600 text-purple-600 hover:bg-purple-50"
+            className="border-green-600 text-green-600 hover:bg-green-50"
           >
             <Edit2 className="w-4 h-4 mr-2" />
             编辑专辑
@@ -220,19 +220,19 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
         <div className="max-w-4xl mx-auto">
           {/* 专辑头部 */}
           <div className="flex flex-col md:flex-row gap-6 mb-8">
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 mx-auto md:mx-0">
               <img
                 src={album.coverUrl}
                 alt={album.title}
                 className="w-48 h-48 object-cover rounded-2xl shadow-lg"
               />
             </div>
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <Disc className="w-5 h-5 text-purple-600" />
-                <span className="text-sm font-medium text-purple-600">专辑</span>
+            <div className="flex flex-col justify-center text-center md:text-left">
+              <div className="flex items-center gap-2 mb-2 justify-center md:justify-start">
+                <Disc className="w-5 h-5 text-green-600" />
+                <span className="text-sm font-medium text-green-600">专辑</span>
               </div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-2">{album.title}</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{album.title}</h2>
               <p className="text-xl text-gray-600 mb-2">{album.artist}</p>
               <p className="text-gray-500">{album.year} · {album.songs.length} 首歌曲</p>
             </div>
@@ -258,17 +258,17 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
               {filteredSongs.map((song, index) => (
                 <div
                   key={song.id}
-                  className="flex items-center gap-4 p-4 hover:bg-purple-50 transition-colors group"
+                  className="flex items-center gap-4 p-4 hover:bg-green-50 transition-colors group"
                 >
                   <div
                     className="flex items-center gap-4 flex-1 cursor-pointer"
                     onClick={() => handleSongClick(song.id)}
                   >
-                    <div className="w-8 text-center text-gray-400 group-hover:text-purple-600">
+                    <div className="w-8 text-center text-gray-400 group-hover:text-green-600">
                       {index + 1}
                     </div>
-                    <div className="p-2 rounded-full bg-purple-100 group-hover:bg-purple-500 transition-colors">
-                      <Play className="w-4 h-4 text-purple-600 group-hover:text-white" />
+                    <div className="p-2 rounded-full bg-green-100 group-hover:bg-green-500 transition-colors">
+                      <Play className="w-4 h-4 text-green-600 group-hover:text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-gray-900 truncate">{song.title}</h3>

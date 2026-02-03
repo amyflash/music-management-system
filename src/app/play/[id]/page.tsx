@@ -242,9 +242,9 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   // 显示加载状态
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-red-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-emerald-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent"></div>
           <p className="mt-4 text-gray-700">加载歌曲中...</p>
         </div>
       </div>
@@ -257,28 +257,28 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-red-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-emerald-50">
       {/* 顶部导航栏 */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-3 w-full sm:w-auto">
+            <div className="p-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
               <MusicIcon className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
               音乐管理
             </h1>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
             <Button
               onClick={() => setUploadDialogOpen(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600"
             >
-              <UploadIcon className="w-4 h-4 mr-2" />
+              <UploadIcon className="w-4 h-4 mr-2 hidden sm:block" />
               上传音乐
             </Button>
-            <div className="flex items-center space-x-2 text-gray-700">
+            <div className="flex items-center space-x-2 text-gray-700 hidden sm:flex">
               <User className="w-5 h-5" />
               <span className="font-medium">{user?.name}</span>
             </div>
@@ -289,7 +289,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
               className="text-gray-700 hover:text-red-600"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              退出登录
+              <span className="hidden sm:inline">退出登录</span>
             </Button>
           </div>
         </div>
@@ -301,7 +301,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
           <Button
             variant="ghost"
             onClick={handleBackToAlbum}
-            className="text-gray-700 hover:text-purple-600"
+            className="text-gray-700 hover:text-green-600"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             返回专辑
@@ -309,12 +309,12 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
-          <Card className="p-8 bg-white/95 backdrop-blur-sm shadow-2xl">
+          <Card className="p-4 sm:p-8 bg-white/95 backdrop-blur-sm shadow-2xl">
             {/* 播放器控制 */}
-            <div className="flex flex-col justify-center space-y-6">
+            <div className="flex flex-col justify-center space-y-4 sm:space-y-6">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900">{song.title}</h2>
-                <p className="text-xl text-gray-600 mt-2">{song.artist}</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{song.title}</h2>
+                <p className="text-lg sm:text-xl text-gray-600 mt-2">{song.artist}</p>
                 <p className="text-gray-500 mt-1">{song.albumTitle}</p>
               </div>
 
@@ -336,7 +336,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                   <div className="relative w-full h-2 bg-gray-200 rounded-lg cursor-pointer">
                     {/* 已缓冲区域 */}
                     <div
-                      className="absolute top-0 left-0 h-full bg-purple-300/50 rounded-lg"
+                      className="absolute top-0 left-0 h-full bg-green-300/50 rounded-lg"
                       style={{ width: `${duration > 0 ? (buffered / duration) * 100 : 0}%` }}
                     />
                     {/* 已播放区域 */}
@@ -351,7 +351,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                     />
                     {/* 进度条可视化 */}
                     <div
-                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg pointer-events-none"
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-600 to-teal-600 rounded-lg pointer-events-none"
                       style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
                     />
                   </div>
@@ -362,25 +362,25 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                 </div>
 
                 {/* 播放控制按钮 */}
-                <div className="flex items-center justify-center space-x-4">
+                <div className="flex items-center justify-center space-x-2 sm:space-x-4">
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={playPrevious}
-                    className="rounded-full h-12 w-12"
+                    className="rounded-full h-10 w-10 sm:h-12 sm:w-12"
                   >
-                    <SkipBack className="w-5 h-5" />
+                    <SkipBack className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
 
                   <Button
                     size="icon"
                     onClick={togglePlayPause}
-                    className="rounded-full h-16 w-16 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    className="rounded-full h-14 w-14 sm:h-16 sm:w-16 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600"
                   >
                     {isPlaying ? (
-                      <Pause className="w-8 h-8 text-white fill-white" />
+                      <Pause className="w-6 h-6 sm:w-8 sm:h-8 text-white fill-white" />
                     ) : (
-                      <Play className="w-8 h-8 text-white fill-white ml-1" />
+                      <Play className="w-6 h-6 sm:w-8 sm:h-8 text-white fill-white ml-1" />
                     )}
                   </Button>
 
@@ -388,9 +388,9 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                     variant="outline"
                     size="icon"
                     onClick={playNext}
-                    className="rounded-full h-12 w-12"
+                    className="rounded-full h-10 w-10 sm:h-12 sm:w-12"
                   >
-                    <SkipForward className="w-5 h-5" />
+                    <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                 </div>
 
@@ -413,17 +413,17 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
           {/* 歌词卡片 */}
           {(song.lyrics || song.lyricsUrl) && lyrics.length > 0 && (
             <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <FileText className="w-5 h-5 text-purple-600" />
+                  <FileText className="w-5 h-5 text-green-600" />
                   <h3 className="text-lg font-bold text-gray-900">歌词</h3>
                   {lyrics.length > 0 && (
-                    <span className="text-sm text-gray-500 ml-2">
+                    <span className="text-sm text-gray-500 ml-2 hidden sm:inline">
                       (支持点击歌词跳转)
                     </span>
                   )}
                 </div>
-                <div ref={scrollContainerRef} className="h-96 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50/50">
+                <div ref={scrollContainerRef} className="h-64 sm:h-96 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50/50">
                   <div className="py-4">
                     {lyrics.map((line, index) => (
                       <div
@@ -434,8 +434,8 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                         onClick={() => handleLyricClick(line.time)}
                         className={`block py-2 px-4 rounded-lg cursor-pointer transition-all duration-300 mb-2 leading-relaxed ${
                           index === currentLyricIndex
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold scale-105 shadow-lg'
-                            : 'text-gray-700 hover:bg-purple-50'
+                            ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold scale-105 shadow-lg'
+                            : 'text-gray-700 hover:bg-green-50'
                         }`}
                       >
                         <span className="text-xs opacity-70 mr-3 font-mono">

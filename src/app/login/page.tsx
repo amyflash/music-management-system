@@ -28,10 +28,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-500 via-teal-500 to-emerald-500 p-4">
       <Card className="w-full max-w-md p-8 bg-white/95 backdrop-blur-sm shadow-2xl">
         <div className="flex flex-col items-center mb-8">
-          <div className="p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-4">
+          <div className="p-4 bg-gradient-to-r from-green-500 to-teal-500 rounded-full mb-4">
             <Music className="w-12 h-12 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">音乐管理</h1>
@@ -69,7 +69,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <Button type="submit" className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+          <Button type="submit" className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600">
             登录
           </Button>
         </form>

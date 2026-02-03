@@ -109,36 +109,37 @@ export default function MusicListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-red-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-emerald-50">
       {/* 顶部导航栏 */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-3 w-full sm:w-auto">
+            <div className="p-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
               <MusicIcon className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
               音乐管理
             </h1>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
             <Button
               variant="outline"
               size="sm"
               onClick={() => router.push('/diagnostic/upload')}
+              className="hidden sm:flex"
             >
               <Activity className="w-4 h-4 mr-2" />
               诊断工具
             </Button>
             <Button
               onClick={() => setUploadDialogOpen(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600"
             >
-              <UploadIcon className="w-4 h-4 mr-2" />
+              <UploadIcon className="w-4 h-4 mr-2 hidden sm:block" />
               创建专辑
             </Button>
-            <div className="flex items-center space-x-2 text-gray-700">
+            <div className="flex items-center space-x-2 text-gray-700 hidden sm:flex">
               <User className="w-5 h-5" />
               <span className="font-medium">{user?.name}</span>
             </div>
@@ -149,7 +150,7 @@ export default function MusicListPage() {
               className="text-gray-700 hover:text-red-600"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              退出登录
+              <span className="hidden sm:inline">退出登录</span>
             </Button>
           </div>
         </div>
@@ -196,7 +197,7 @@ export default function MusicListPage() {
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <div className="p-4 bg-white/90 rounded-full transform scale-0 group-hover:scale-100 transition-transform duration-300">
-                    <Disc className="w-8 h-8 text-purple-600" />
+                    <Disc className="w-8 h-8 text-green-600" />
                   </div>
                 </div>
               </div>
