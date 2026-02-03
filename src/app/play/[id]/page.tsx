@@ -19,6 +19,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [buffered, setBuffered] = useState(0);
   const [volume, setVolume] = useState(0.5);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
@@ -186,6 +187,14 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
     }
   };
 
+  const handleProgress = () => {
+    if (audioRef.current && audioRef.current.buffered.length > 0) {
+      // 获取已缓冲的最后一个时间点（通常是缓冲结束位置）
+      const bufferedEnd = audioRef.current.buffered.end(audioRef.current.buffered.length - 1);
+      setBuffered(bufferedEnd);
+    }
+  };
+
   const formatTime = (time: number) => {
     if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
@@ -315,6 +324,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                   src={song.audioUrl}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
+                  onProgress={handleProgress}
                   onEnded={() => {
                     setIsPlaying(false);
                     playNext();
@@ -323,14 +333,28 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
 
                 {/* 进度条 */}
                 <div className="space-y-2">
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration || 0}
-                    value={currentTime}
-                    onChange={handleSeek}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                  />
+                  <div className="relative w-full h-2 bg-gray-200 rounded-lg cursor-pointer">
+                    {/* 已缓冲区域 */}
+                    <div
+                      className="absolute top-0 left-0 h-full bg-purple-300/50 rounded-lg"
+                      style={{ width: `${duration > 0 ? (buffered / duration) * 100 : 0}%` }}
+                    />
+                    {/* 已播放区域 */}
+                    <input
+                      type="range"
+                      min="0"
+                      max={duration || 0}
+                      value={currentTime}
+                      onChange={handleSeek}
+                      className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+                      style={{ zIndex: 10 }}
+                    />
+                    {/* 进度条可视化 */}
+                    <div
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg pointer-events-none"
+                      style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                    />
+                  </div>
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>{formatTime(currentTime)}</span>
                     <span>{formatTime(duration)}</span>
