@@ -2,24 +2,23 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// 定义用户信息类型
 interface User {
   name: string;
-  role?: string;
+  username: string; // 建议与后端返回结构保持一致
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
-  loading: boolean; // 增加加载状态，防止页面闪烁
+  loading: boolean;
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-//后端接口地址
-const API_BASE_URL = 'https://auth.516768.xyz/api/login';
+// ！！！注意这里：如果你用 FastAPI，路径通常不带 .php
+const API_URL = 'https://auth.516768.xyz/api/login';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,22 +26,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 初始化时从本地获取 Token 并验证有效性
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
 
     if (token && savedUser) {
-      // 理想情况下，这里应该调用一个 /api/verify 接口验证 Token 是否过期
       setIsAuthenticated(true);
-      setUser(JSON.parse(savedUser));
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error("解析用户信息失败");
+      }
     }
     setLoading(false);
   }, []);
 
-  // 登录逻辑：调用 PHP 后端
   const login = async (username: string, password: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/login.php`, {
+      // ！！！移除这里的 .php，直接请求 API_URL
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -51,20 +52,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (response.ok && data.token) {
-        // 1. 保存 Token 和用户信息
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // 2. 更新状态
         setIsAuthenticated(true);
         setUser(data.user);
         return { success: true };
       } else {
-        return { success: false, message: data.message || '登录失败' };
+        // 返回 FastAPI 抛出的 detail 错误信息
+        return { success: false, message: data.detail || '登录失败' };
       }
     } catch (error) {
-      console.error('Login Error:', error);
-      return { success: false, message: '网络请求失败' };
+      return { success: false, message: '无法连接到认证服务器' };
     }
   };
 
@@ -84,6 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) throw new Error('useAuth must be used within AuthContext');
+  if (context === undefined) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }
