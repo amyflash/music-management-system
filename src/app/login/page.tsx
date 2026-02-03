@@ -13,17 +13,27 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    if (login(username, password)) {
-      router.push('/music');
-    } else {
-      setError('用户名或密码错误');
+    try {
+      const result = await login(username, password);
+
+      if (result.success) {
+        router.push('/music');
+      } else {
+        setError(result.message || '用户名或密码错误');
+      }
+    } catch (err) {
+      setError('登录失败，请稍后重试');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -69,13 +79,17 @@ export default function LoginPage() {
             </div>
           )}
 
-          <Button type="submit" className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600">
-            登录
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600"
+          >
+            {isLoading ? '登录中...' : '登录'}
           </Button>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          <p>默认账号: admin / admin</p>
+          <p>默认账号: harrietlq / 1q2w3e4r</p>
         </div>
       </Card>
     </div>
