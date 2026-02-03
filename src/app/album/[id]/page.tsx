@@ -161,17 +161,17 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-emerald-50">
       {/* 顶部导航栏 */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-3 w-full sm:w-auto">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3 hidden sm:flex">
             <div className="p-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
               <MusicIcon className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent hidden sm:block">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
               音乐管理
             </h1>
           </div>
 
-          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center space-x-2 justify-end w-full sm:w-auto">
             <Button
               onClick={() => setUploadDialogOpen(true)}
               className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600"
