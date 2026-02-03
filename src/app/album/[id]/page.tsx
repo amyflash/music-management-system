@@ -207,23 +207,14 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
             <ArrowLeft className="w-4 h-4 mr-2" />
             返回专辑列表
           </Button>
-          <div className="flex gap-2">
-            <Button
-              onClick={handleEditAlbum}
-              variant="outline"
-              className="border-purple-600 text-purple-600 hover:bg-purple-50"
-            >
-              <Edit2 className="w-4 h-4 mr-2" />
-              编辑专辑
-            </Button>
-            <Button
-              onClick={() => setUploadDialogOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white"
-            >
-              <UploadIcon className="w-4 h-4 mr-2" />
-              添加歌曲
-            </Button>
-          </div>
+          <Button
+            onClick={handleEditAlbum}
+            variant="outline"
+            className="border-purple-600 text-purple-600 hover:bg-purple-50"
+          >
+            <Edit2 className="w-4 h-4 mr-2" />
+            编辑专辑
+          </Button>
         </div>
 
         <div className="max-w-4xl mx-auto">

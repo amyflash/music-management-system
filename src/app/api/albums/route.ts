@@ -6,20 +6,29 @@ export async function GET() {
   try {
     const result = await getPool().query(
       `SELECT
-        id,
-        title,
-        artist,
-        year,
-        cover_url as "coverUrl",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM albums
-      ORDER BY created_at DESC`
+        a.id,
+        a.title,
+        a.artist,
+        a.year,
+        a.cover_url as "coverUrl",
+        a.created_at as "createdAt",
+        a.updated_at as "updatedAt",
+        COALESCE(COUNT(s.id), 0) as "songCount"
+      FROM albums a
+      LEFT JOIN songs s ON a.id = s.album_id
+      GROUP BY a.id, a.title, a.artist, a.year, a.cover_url, a.created_at, a.updated_at
+      ORDER BY a.created_at DESC`
     );
+
+    // 将 songCount 添加到每个专辑对象中
+    const albums = result.rows.map(row => ({
+      ...row,
+      songs: Array(parseInt(row.songCount)).fill(null), // 为保持兼容性，创建占位符数组
+    }));
 
     return NextResponse.json({
       success: true,
-      albums: result.rows,
+      albums: albums,
       count: result.rowCount,
     });
   } catch (error) {
