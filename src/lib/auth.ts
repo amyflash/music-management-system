@@ -18,22 +18,23 @@ export function extractToken(request: NextRequest): string | null {
 
 /**
  * 验证 Token 是否有效
- * 注意：这需要后端提供验证token的接口
- * 如果没有验证接口，前端只能做简单的存在性检查
+ * 调用后端验证 API
  */
 export async function verifyToken(token: string): Promise<boolean> {
   try {
-    // TODO: 如果后端提供了验证token的接口，在这里调用
-    // 例如：
-    // const response = await fetch(`${AUTH_API_URL/api/verify`, {
-    //   method: 'POST',
-    //   headers: { 'Authorization': `Bearer ${token}` }
-    // });
-    // return response.ok;
+    const response = await fetch(`${AUTH_API_URL}/api/verify-token`, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
 
-    // 暂时只做简单的存在性检查
-    // 实际生产中应该调用后端验证接口
-    return !!token && token.length > 0;
+    const data = await response.json();
+
+    // 成功响应：{"success":true,"message":"Token 验证有效",...}
+    // 失败响应：{"detail":"Token 无效或已被注销"}
+    return response.ok && data.success === true;
   } catch (error) {
     console.error('Token verification failed:', error);
     return false;

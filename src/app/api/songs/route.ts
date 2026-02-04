@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import getPool from '@/lib/db';
-import { requireAuthSync } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/songs - 获取所有歌曲（可选按专辑ID过滤）
 export async function GET(request: NextRequest) {
   // 检查认证
-  const authError = requireAuthSync(request);
+  const authError = await requireAuth(request);
   if (authError) return authError;
 
   try {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 // POST /api/songs - 创建歌曲
 export async function POST(request: NextRequest) {
   // 检查认证
-  const authError = requireAuthSync(request);
+  const authError = await requireAuth(request);
   if (authError) return authError;
 
   try {

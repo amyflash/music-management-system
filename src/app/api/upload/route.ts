@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuthSync } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -7,8 +7,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log('[Upload] 开始处理文件上传请求');
 
-    // 1. 鉴权检查
-    const authError = requireAuthSync(request);
+    // 1. 鉴权检查（调用后端验证 API）
+    const authError = await requireAuth(request);
     if (authError) {
       console.error('[Upload] 未授权访问');
       return authError;
