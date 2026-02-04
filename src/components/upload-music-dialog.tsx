@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -59,6 +60,15 @@ async function uploadFile(file: File, token: string): Promise<string> {
   if (!response.ok) {
     const error = await response.json();
     console.error('[Upload] 上传失败:', error);
+
+    // 如果是 401 错误（token 无效或过期），清理本地数据
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      throw new Error('认证令牌已过期，正在跳转到登录页...');
+    }
+
     throw new Error(error.error || '文件上传失败');
   }
 
@@ -185,6 +195,7 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
             <Upload className="w-5 h-5 text-purple-600" />
             上传音乐
           </DialogTitle>
+          <DialogDescription>上传音频文件、封面和歌词</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

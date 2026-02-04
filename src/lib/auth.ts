@@ -22,6 +22,8 @@ export function extractToken(request: NextRequest): string | null {
  */
 export async function verifyToken(token: string): Promise<boolean> {
   try {
+    console.log('[Auth] 开始验证 token:', token.substring(0, 10) + '...');
+
     const response = await fetch(`${AUTH_API_URL}/api/verify-token`, {
       method: 'GET',
       headers: {
@@ -30,13 +32,16 @@ export async function verifyToken(token: string): Promise<boolean> {
       },
     });
 
+    console.log('[Auth] 验证响应状态:', response.status);
+
     const data = await response.json();
+    console.log('[Auth] 验证响应数据:', data);
 
     // 成功响应：{"success":true,"message":"Token 验证有效",...}
     // 失败响应：{"detail":"Token 无效或已被注销"}
     return response.ok && data.success === true;
   } catch (error) {
-    console.error('Token verification failed:', error);
+    console.error('[Auth] Token verification failed:', error);
     return false;
   }
 }
