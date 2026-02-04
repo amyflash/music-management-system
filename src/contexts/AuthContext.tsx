@@ -35,17 +35,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
 
+    console.log('[AuthContext] 初始化:', { savedToken: savedToken ? '存在' : '不存在', savedUser });
+
     if (savedToken && savedUser) {
       try {
+        const parsedUser = JSON.parse(savedUser);
+        console.log('[AuthContext] 恢复登录状态:', { username: parsedUser.username });
         setToken(savedToken);
-        setUser(JSON.parse(savedUser));
+        setUser(parsedUser);
         setIsAuthenticated(true);
       } catch (error) {
-        console.error("解析本地用户信息失败", error);
+        console.error('[AuthContext] 解析本地用户信息失败', error);
         // 如果解析失败，清理错误的本地数据
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
+    } else {
+      console.log('[AuthContext] 未找到本地登录信息');
     }
     setLoading(false);
   }, []);

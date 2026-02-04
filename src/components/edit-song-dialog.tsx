@@ -34,6 +34,8 @@ interface EditSongDialogProps {
 
 // 上传文件到服务器
 async function uploadFile(file: File, token: string): Promise<string> {
+  console.log('[Upload] 开始上传文件:', { fileName: file.name, token: token ? '存在' : '不存在' });
+
   const formData = new FormData();
   formData.append('file', file);
 
@@ -47,10 +49,12 @@ async function uploadFile(file: File, token: string): Promise<string> {
 
   if (!response.ok) {
     const error = await response.json();
+    console.error('[Upload] 上传失败:', error);
     throw new Error(error.error || '文件上传失败');
   }
 
   const result = await response.json();
+  console.log('[Upload] 上传成功:', result);
 
   // Serverless 环境可能返回 dataUrl 或 warning
   if (result.isTemporary && result.warning) {
