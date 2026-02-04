@@ -51,13 +51,41 @@ async function uploadFile(file: File, token: string): Promise<string> {
   if (!response.ok) {
     const error = await response.json();
     console.error('[Upload] 上传失败:', error);
+    console.error('[Upload] 响应状态:', response.status);
 
-    // 如果是 401 错误（token 无效或过期），清理本地数据
+    // 如果是 401 错误（token 无效或过期），先验证 token 是否真的无效
     if (response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-      throw new Error('认证令牌已过期，正在跳转到登录页...');
+      console.warn('[Upload] 收到 401 错误，准备验证 token 有效性...');
+
+      // 尝试验证 token
+      try {
+        const verifyResponse = await fetch('https://auth.516768.xyz/api/verify-token', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const verifyData = await verifyResponse.json();
+        console.log('[Upload] Token 验证结果:', verifyData);
+
+        // 只有当 token 真的无效时才清空 localStorage
+        if (!verifyResponse.ok || verifyData.success !== true) {
+          console.error('[Upload] ❌ Token 确实无效，准备清理 localStorage');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          throw new Error('认证令牌已过期，正在跳转到登录页...');
+        } else {
+          // Token 有效，可能是上传 API 的问题
+          console.error('[Upload] Token 有效，可能是上传 API 的问题');
+          throw new Error(error.error || '上传失败，请重试');
+        }
+      } catch (verifyError) {
+        console.error('[Upload] Token 验证失败:', verifyError);
+        // 验证失败，可能是网络问题，不清空 localStorage
+        throw new Error(error.error || '文件上传失败');
+      }
     }
 
     throw new Error(error.error || '文件上传失败');

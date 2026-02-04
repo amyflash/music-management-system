@@ -34,15 +34,29 @@ export async function verifyToken(token: string): Promise<boolean> {
 
     console.log('[Auth] 验证响应状态:', response.status);
 
+    if (!response.ok) {
+      console.error('[Auth] 验证失败，HTTP 状态码:', response.status);
+      // HTTP 错误（401, 500 等）认为 token 无效
+      return false;
+    }
+
     const data = await response.json();
     console.log('[Auth] 验证响应数据:', data);
 
+    // 检查响应格式是否正确
+    if (!data || typeof data.success !== 'boolean') {
+      console.error('[Auth] 响应格式错误:', data);
+      // 格式错误，不要误判 token 无效
+      return true;
+    }
+
     // 成功响应：{"success":true,"message":"Token 验证有效",...}
-    // 失败响应：{"detail":"Token 无效或已被注销"}
-    return response.ok && data.success === true;
+    return data.success === true;
   } catch (error) {
-    console.error('[Auth] Token verification failed:', error);
-    return false;
+    console.error('[Auth] Token verification exception:', error);
+    // 网络错误或其他异常，不要误判 token 无效
+    // 返回 true 以避免因网络问题导致用户被登出
+    return true;
   }
 }
 
