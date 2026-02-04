@@ -8,7 +8,7 @@ import { getMergedAlbums, createAlbum, createSong, deleteAlbum, isUserUploadedAl
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
+import { EditAlbumDialog } from '@/components/edit-album-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +24,7 @@ import { Disc, LogOut, User, Music as MusicIcon, Upload as UploadIcon, Trash2, S
 export default function MusicListPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [createAlbumDialogOpen, setCreateAlbumDialogOpen] = useState(false);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -60,31 +60,20 @@ export default function MusicListPage() {
     router.push('/login');
   };
 
-  const handleAlbumClick = (album: Album) => {
-    router.push(`/album/${album.id}`);
+  const handleCreateAlbum = async (data: {
+    title: string;
+    artist: string;
+    year: string;
+    coverUrl?: string;
+  }) => {
+    const newAlbum = await createAlbum(data);
+    if (newAlbum) {
+      setRefreshKey(prev => prev + 1);
+    }
   };
 
-  const handleUpload = async (uploadData: UploadFormData) => {
-    // 创建专辑
-    const newAlbum = await createAlbum({
-      title: uploadData.albumTitle,
-      artist: uploadData.albumArtist,
-      year: uploadData.albumYear,
-      coverUrl: uploadData.albumCoverUrl,
-    });
-
-    if (newAlbum && uploadData.songAudioUrl) {
-      // 创建歌曲
-      await createSong({
-        albumId: newAlbum.id,
-        title: uploadData.songTitle,
-        duration: uploadData.songDuration,
-        audioUrl: uploadData.songAudioUrl,
-        lyricsUrl: uploadData.songLyricsUrl,
-      });
-      // 触发重新加载专辑数据
-      setRefreshKey((prev) => prev + 1);
-    }
+  const handleAlbumClick = (album: Album) => {
+    router.push(`/album/${album.id}`);
   };
 
   const handleDeleteAlbum = (albumId: string, e: React.MouseEvent) => {
@@ -115,7 +104,7 @@ export default function MusicListPage() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-end">
           <div className="flex items-center space-x-2 justify-end w-full sm:w-auto">
             <Button
-              onClick={() => setUploadDialogOpen(true)}
+              onClick={() => setCreateAlbumDialogOpen(true)}
               className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600"
             >
               <UploadIcon className="w-4 h-4 mr-2 hidden sm:block" />
@@ -222,11 +211,11 @@ export default function MusicListPage() {
         </div>
       </main>
 
-      {/* 上传音乐对话框 */}
-      <UploadMusicDialog
-        open={uploadDialogOpen}
-        onOpenChange={setUploadDialogOpen}
-        onUpload={handleUpload}
+      {/* 创建专辑对话框 */}
+      <EditAlbumDialog
+        open={createAlbumDialogOpen}
+        onOpenChange={setCreateAlbumDialogOpen}
+        onSave={handleCreateAlbum}
       />
 
       {/* 删除确认对话框 */}

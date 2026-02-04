@@ -8,7 +8,7 @@ import { getAlbumById, createSong, deleteSong, updateSong, updateAlbum, isUserUp
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { UploadMusicDialog, UploadFormData } from '@/components/upload-music-dialog';
+import { UploadSongDialog, UploadSongFormData } from '@/components/upload-song-dialog';
 import { EditAlbumDialog } from '@/components/edit-album-dialog';
 import { EditSongDialog } from '@/components/edit-song-dialog';
 import {
@@ -56,7 +56,7 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
     router.push(`/play/${songId}`);
   };
 
-  const handleUpload = async (uploadData: UploadFormData) => {
+  const handleUpload = async (uploadData: UploadSongFormData) => {
     if (!album || !uploadData.songAudioUrl) return;
 
     // 创建歌曲数据到数据库
@@ -320,16 +320,14 @@ export default function AlbumDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       </main>
 
-      {/* 上传音乐对话框 */}
-      <UploadMusicDialog
+      {/* 上传歌曲对话框 */}
+      <UploadSongDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         onUpload={handleUpload}
-        presetAlbum={album ? {
-          title: album.title,
-          artist: album.artist,
-          year: album.year,
-        } : undefined}
+        albumId={album?.id || ''}
+        albumTitle={album?.title || ''}
+        albumArtist={album?.artist || ''}
       />
 
       {/* 删除确认对话框 */}
