@@ -1,31 +1,28 @@
-import { sql } from "drizzle-orm";
 import {
-  pgTable,
+  sqliteTable,
   text,
-  varchar,
-  timestamp,
   integer,
   index,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/sqlite-core";
 import { createSchemaFactory } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // 专辑表
-export const albums = pgTable(
+export const albums = sqliteTable(
   "albums",
   {
-    id: varchar("id", { length: 36 })
+    id: text("id")
       .primaryKey()
-      .default(sql`gen_random_uuid()`),
-    title: varchar("title", { length: 255 }).notNull(),
-    artist: varchar("artist", { length: 255 }).notNull(),
-    year: varchar("year", { length: 10 }).notNull(),
-    coverUrl: varchar("cover_url", { length: 500 }),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
+      .$defaultFn(() => globalThis.crypto.randomUUID()),
+    title: text("title").notNull(),
+    artist: text("artist").notNull(),
+    year: text("year"),
+    coverUrl: text("cover_url"),
+    createdAt: integer("created_at", { mode: 'timestamp' })
+      .$defaultFn(() => new Date())
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    updatedAt: integer("updated_at", { mode: 'timestamp' }),
   },
   (table) => ({
     titleIdx: index("albums_title_idx").on(table.title),
@@ -33,21 +30,21 @@ export const albums = pgTable(
 );
 
 // 歌曲表
-export const songs = pgTable(
+export const songs = sqliteTable(
   "songs",
   {
-    id: varchar("id", { length: 36 })
+    id: text("id")
       .primaryKey()
-      .default(sql`gen_random_uuid()`),
-    albumId: varchar("album_id", { length: 36 }).notNull(),
-    title: varchar("title", { length: 255 }).notNull(),
-    duration: varchar("duration", { length: 10 }).notNull(),
-    audioUrl: varchar("audio_url", { length: 500 }).notNull(),
-    lyricsUrl: varchar("lyrics_url", { length: 500 }),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
+      .$defaultFn(() => globalThis.crypto.randomUUID()),
+    albumId: text("album_id").notNull(),
+    title: text("title").notNull(),
+    duration: text("duration").notNull(),
+    audioUrl: text("audio_url").notNull(),
+    lyricsUrl: text("lyrics_url"),
+    createdAt: integer("created_at", { mode: 'timestamp' })
+      .$defaultFn(() => new Date())
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    updatedAt: integer("updated_at", { mode: 'timestamp' }),
   },
   (table) => ({
     albumIdIdx: index("songs_album_id_idx").on(table.albumId),

@@ -93,13 +93,8 @@ async function uploadFile(file: File, token: string): Promise<string> {
   const result = await response.json();
   console.log('[Upload] 上传成功:', result);
 
-  // Serverless 环境可能返回 dataUrl 或 warning
-  if (result.isTemporary && result.warning) {
-    console.warn('[Upload] Serverless 环境:', result.warning);
-  }
-
-  // 返回 URL 或 dataUrl
-  return result.url || result.dataUrl || '';
+  // 返回 URL
+  return result.url || '';
 }
 
 export function EditAlbumDialog({ open, onOpenChange, onSave, albumData }: EditAlbumDialogProps) {
@@ -129,8 +124,8 @@ export function EditAlbumDialog({ open, onOpenChange, onSave, albumData }: EditA
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.artist || !formData.year) {
-      alert('请填写所有必要信息');
+    if (!formData.title || !formData.artist) {
+      alert('请填写专辑名称和歌手');
       return;
     }
 
@@ -148,7 +143,7 @@ export function EditAlbumDialog({ open, onOpenChange, onSave, albumData }: EditA
         onSave({
           title: formData.title,
           artist: formData.artist,
-          year: formData.year,
+          year: formData.year || undefined,
           coverUrl: finalCoverUrl,
         });
       }
@@ -194,14 +189,13 @@ export function EditAlbumDialog({ open, onOpenChange, onSave, albumData }: EditA
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="year">发行年份 *</Label>
+            <Label htmlFor="year">发行年份（可选）</Label>
             <Input
               id="year"
               type="number"
               value={formData.year}
               onChange={(e) => setFormData({ ...formData, year: e.target.value })}
               placeholder="2024"
-              required
             />
           </div>
 

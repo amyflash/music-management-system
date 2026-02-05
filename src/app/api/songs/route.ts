@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import getPool from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { SongManager } from '@/storage/database/songManager';
+import { AlbumManager } from '@/storage/database/albumManager';
 
 // GET /api/songs - 获取所有歌曲（可选按专辑ID过滤）
 export async function GET(request: NextRequest) {
@@ -12,33 +13,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const albumId = searchParams.get('albumId');
 
-    let query = `
-      SELECT
-        id,
-        album_id as "albumId",
-        title,
-        duration,
-        audio_url as "audioUrl",
-        lyrics_url as "lyricsUrl",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM songs
-    `;
-    const params: any[] = [];
+    const songManager = new SongManager();
 
+    let options: any = {};
     if (albumId) {
-      query += ' WHERE album_id = $1';
-      params.push(albumId);
+      options.albumId = albumId;
     }
 
-    query += ' ORDER BY created_at ASC';
-
-    const result = await getPool().query(query, params);
+    const songs = await songManager.getSongs(options);
+    const count = songs.length;
 
     return NextResponse.json({
       success: true,
-      songs: result.rows,
-      count: result.rowCount,
+      songs,
+      count,
     });
   } catch (error) {
     console.error('获取歌曲列表失败:', error);
@@ -73,13 +61,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 检查专辑是否存在
-    const albumCheck = await getPool().query(
-      'SELECT id FROM albums WHERE id = $1',
-      [albumId]
-    );
+    const songManager = new SongManager();
+    const albumManager = new AlbumManager();
 
-    if (albumCheck.rowCount === 0) {
+    // 检查专辑是否存在
+    const album = await albumManager.getAlbumById(albumId);
+    if (!album) {
       return NextResponse.json(
         {
           success: false,
@@ -89,24 +76,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await getPool().query(
-      `INSERT INTO songs (album_id, title, duration, audio_url, lyrics_url)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING
-         id,
-         album_id as "albumId",
-         title,
-         duration,
-         audio_url as "audioUrl",
-         lyrics_url as "lyricsUrl",
-         created_at as "createdAt",
-         updated_at as "updatedAt"`,
-      [albumId, title, duration, audioUrl, lyricsUrl || null]
-    );
+    const song = await songManager.createSong({
+      albumId,
+      title,
+      duration,
+      audioUrl,
+      lyricsUrl: lyricsUrl || undefined,
+    });
 
     return NextResponse.json({
       success: true,
-      song: result.rows[0],
+      song,
     });
   } catch (error) {
     console.error('创建歌曲失败:', error);

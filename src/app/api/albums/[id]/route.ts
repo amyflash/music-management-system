@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import getPool from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { AlbumManager } from '@/storage/database/albumManager';
+import { SongManager } from '@/storage/database/songManager';
 
 // GET /api/albums/[id] - 获取专辑详情（包含歌曲）
 export async function GET(
@@ -14,22 +15,11 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // 获取专辑信息
-    const albumResult = await getPool().query(
-      `SELECT
-        id,
-        title,
-        artist,
-        year,
-        cover_url as "coverUrl",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM albums
-      WHERE id = $1`,
-      [id]
-    );
+    // 使用AlbumManager获取专辑信息
+    const albumManager = new AlbumManager();
+    const album = await albumManager.getAlbumById(id);
 
-    if (albumResult.rowCount === 0) {
+    if (!album) {
       return NextResponse.json(
         {
           success: false,
@@ -39,31 +29,18 @@ export async function GET(
       );
     }
 
-    // 获取专辑的歌曲
-    const songsResult = await getPool().query(
-      `SELECT
-        id,
-        album_id as "albumId",
-        title,
-        duration,
-        audio_url as "audioUrl",
-        lyrics_url as "lyricsUrl",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM songs
-      WHERE album_id = $1
-      ORDER BY created_at ASC`,
-      [id]
-    );
+    // 使用SongManager获取专辑歌曲
+    const songManager = new SongManager();
+    const songs = await songManager.getSongs({ albumId: id });
 
-    const album = {
-      ...albumResult.rows[0],
-      songs: songsResult.rows,
+    const albumWithSongs = {
+      ...album,
+      songs,
     };
 
     return NextResponse.json({
       success: true,
-      album,
+      album: albumWithSongs,
     });
   } catch (error) {
     console.error('获取专辑详情失败:', error);
@@ -91,13 +68,11 @@ export async function PUT(
     const body = await request.json();
     const { title, artist, year, coverUrl } = body;
 
-    // 检查专辑是否存在
-    const checkResult = await getPool().query(
-      'SELECT id FROM albums WHERE id = $1',
-      [id]
-    );
+    const albumManager = new AlbumManager();
 
-    if (checkResult.rowCount === 0) {
+    // 先检查专辑是否存在
+    const existingAlbum = await albumManager.getAlbumById(id);
+    if (!existingAlbum) {
       return NextResponse.json(
         {
           success: false,
@@ -107,29 +82,14 @@ export async function PUT(
       );
     }
 
-    // 构建更新语句
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramIndex = 1;
+    // 准备更新数据
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (artist !== undefined) updateData.artist = artist;
+    if (year !== undefined) updateData.year = year;
+    if (coverUrl !== undefined) updateData.coverUrl = coverUrl;
 
-    if (title !== undefined) {
-      updates.push(`title = $${paramIndex++}`);
-      values.push(title);
-    }
-    if (artist !== undefined) {
-      updates.push(`artist = $${paramIndex++}`);
-      values.push(artist);
-    }
-    if (year !== undefined) {
-      updates.push(`year = $${paramIndex++}`);
-      values.push(year);
-    }
-    if (coverUrl !== undefined) {
-      updates.push(`cover_url = $${paramIndex++}`);
-      values.push(coverUrl);
-    }
-
-    if (updates.length === 0) {
+    if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -139,28 +99,11 @@ export async function PUT(
       );
     }
 
-    updates.push(`updated_at = NOW()`);
-    values.push(id);
-
-    const query = `
-      UPDATE albums
-      SET ${updates.join(', ')}
-      WHERE id = $${paramIndex}
-      RETURNING
-        id,
-        title,
-        artist,
-        year,
-        cover_url as "coverUrl",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-    `;
-
-    const result = await getPool().query(query, values);
+    const updatedAlbum = await albumManager.updateAlbum(id, updateData);
 
     return NextResponse.json({
       success: true,
-      album: result.rows[0],
+      album: updatedAlbum,
     });
   } catch (error) {
     console.error('更新专辑失败:', error);
@@ -186,13 +129,11 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // 检查专辑是否存在
-    const checkResult = await getPool().query(
-      'SELECT id FROM albums WHERE id = $1',
-      [id]
-    );
+    const albumManager = new AlbumManager();
 
-    if (checkResult.rowCount === 0) {
+    // 先检查专辑是否存在
+    const existingAlbum = await albumManager.getAlbumById(id);
+    if (!existingAlbum) {
       return NextResponse.json(
         {
           success: false,
@@ -202,8 +143,8 @@ export async function DELETE(
       );
     }
 
-    // 删除专辑（由于有外键约束，会级联删除歌曲）
-    await getPool().query('DELETE FROM albums WHERE id = $1', [id]);
+    // 删除专辑（会级联删除歌曲）
+    await albumManager.deleteAlbum(id);
 
     return NextResponse.json({
       success: true,

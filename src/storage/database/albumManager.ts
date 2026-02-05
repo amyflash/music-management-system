@@ -1,12 +1,12 @@
-import { eq, and, SQL, like } from "drizzle-orm";
-import { getDb } from "coze-coding-dev-sdk";
+import { eq, like } from "drizzle-orm";
+import { getDb } from "./db";
 import {
   albums,
   insertAlbumSchema,
   updateAlbumSchema,
   songs,
 } from "./shared/schema";
-import type { Album, InsertAlbum, UpdateAlbum } from "./shared/schema";
+import type { Album, InsertAlbum, UpdateAlbum, Song } from "./shared/schema";
 
 export class AlbumManager {
   async createAlbum(data: InsertAlbum): Promise<Album> {
@@ -48,7 +48,7 @@ export class AlbumManager {
     return album || null;
   }
 
-  async getAlbumWithSongs(id: string): Promise<(Album & { songs: any[] }) | null> {
+  async getAlbumWithSongs(id: string): Promise<(Album & { songs: Song[] }) | null> {
     const db = await getDb();
     const [album] = await db.select().from(albums).where(eq(albums.id, id));
 
@@ -83,7 +83,8 @@ export class AlbumManager {
     await db.delete(songs).where(eq(songs.albumId, id));
     // 再删除专辑
     const result = await db.delete(albums).where(eq(albums.id, id));
-    return (result.rowCount ?? 0) > 0;
+    // @ts-expect-error libsql client returns different result format
+    return (result.changes ?? 0) > 0;
   }
 }
 

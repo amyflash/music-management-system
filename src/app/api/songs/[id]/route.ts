@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import getPool from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { SongManager } from '@/storage/database/songManager';
 
 // GET /api/songs/[id] - 获取歌曲详情
 export async function GET(
@@ -13,23 +13,10 @@ export async function GET(
 
   try {
     const { id } = await params;
+    const songManager = new SongManager();
+    const song = await songManager.getSongById(id);
 
-    const result = await getPool().query(
-      `SELECT
-        id,
-        album_id as "albumId",
-        title,
-        duration,
-        audio_url as "audioUrl",
-        lyrics_url as "lyricsUrl",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM songs
-      WHERE id = $1`,
-      [id]
-    );
-
-    if (result.rowCount === 0) {
+    if (!song) {
       return NextResponse.json(
         {
           success: false,
@@ -41,7 +28,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      song: result.rows[0],
+      song,
     });
   } catch (error) {
     console.error('获取歌曲详情失败:', error);
@@ -69,13 +56,11 @@ export async function PUT(
     const body = await request.json();
     const { albumId, title, duration, audioUrl, lyricsUrl } = body;
 
-    // 检查歌曲是否存在
-    const checkResult = await getPool().query(
-      'SELECT id FROM songs WHERE id = $1',
-      [id]
-    );
+    const songManager = new SongManager();
 
-    if (checkResult.rowCount === 0) {
+    // 先检查歌曲是否存在
+    const existingSong = await songManager.getSongById(id);
+    if (!existingSong) {
       return NextResponse.json(
         {
           success: false,
@@ -85,33 +70,15 @@ export async function PUT(
       );
     }
 
-    // 构建更新语句
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramIndex = 1;
+    // 准备更新数据
+    const updateData: any = {};
+    if (albumId !== undefined) updateData.albumId = albumId;
+    if (title !== undefined) updateData.title = title;
+    if (duration !== undefined) updateData.duration = duration;
+    if (audioUrl !== undefined) updateData.audioUrl = audioUrl;
+    if (lyricsUrl !== undefined) updateData.lyricsUrl = lyricsUrl;
 
-    if (albumId !== undefined) {
-      updates.push(`album_id = $${paramIndex++}`);
-      values.push(albumId);
-    }
-    if (title !== undefined) {
-      updates.push(`title = $${paramIndex++}`);
-      values.push(title);
-    }
-    if (duration !== undefined) {
-      updates.push(`duration = $${paramIndex++}`);
-      values.push(duration);
-    }
-    if (audioUrl !== undefined) {
-      updates.push(`audio_url = $${paramIndex++}`);
-      values.push(audioUrl);
-    }
-    if (lyricsUrl !== undefined) {
-      updates.push(`lyrics_url = $${paramIndex++}`);
-      values.push(lyricsUrl);
-    }
-
-    if (updates.length === 0) {
+    if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -121,29 +88,11 @@ export async function PUT(
       );
     }
 
-    updates.push(`updated_at = NOW()`);
-    values.push(id);
-
-    const query = `
-      UPDATE songs
-      SET ${updates.join(', ')}
-      WHERE id = $${paramIndex}
-      RETURNING
-        id,
-        album_id as "albumId",
-        title,
-        duration,
-        audio_url as "audioUrl",
-        lyrics_url as "lyricsUrl",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-    `;
-
-    const result = await getPool().query(query, values);
+    const updatedSong = await songManager.updateSong(id, updateData);
 
     return NextResponse.json({
       success: true,
-      song: result.rows[0],
+      song: updatedSong,
     });
   } catch (error) {
     console.error('更新歌曲失败:', error);
@@ -168,14 +117,11 @@ export async function DELETE(
 
   try {
     const { id } = await params;
+    const songManager = new SongManager();
 
-    // 检查歌曲是否存在
-    const checkResult = await getPool().query(
-      'SELECT id FROM songs WHERE id = $1',
-      [id]
-    );
-
-    if (checkResult.rowCount === 0) {
+    // 先检查歌曲是否存在
+    const existingSong = await songManager.getSongById(id);
+    if (!existingSong) {
       return NextResponse.json(
         {
           success: false,
@@ -186,7 +132,7 @@ export async function DELETE(
     }
 
     // 删除歌曲
-    await getPool().query('DELETE FROM songs WHERE id = $1', [id]);
+    await songManager.deleteSong(id);
 
     return NextResponse.json({
       success: true,

@@ -109,13 +109,6 @@ export async function POST(request: NextRequest) {
     try {
       fs.writeFileSync(filePath, buffer);
       console.log('[Upload] 文件保存成功');
-
-      // 检查是否使用临时目录
-      const isTempDir = !uploadsDir.includes('public');
-      if (isTempDir) {
-        console.warn('[Upload] ⚠️ 使用临时目录保存文件，Serverless 环境无法持久化存储！');
-        console.warn('[Upload] 文件将在下次请求后失效');
-      }
     } catch (writeError) {
       console.error('[Upload] 文件保存失败:', writeError);
       return NextResponse.json(
@@ -125,37 +118,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 9. 返回访问 URL
-    // Serverless 环境返回 base64 数据（临时解决方案）
-    if (!uploadsDir.includes('public')) {
-      console.log('[Upload] Serverless 环境，返回 base64 数据');
-      const base64 = buffer.toString('base64');
+    // 对于VPS环境，始终返回相对URL
+    const fileUrl = `/uploads/${fileName}`;
+    console.log('[Upload] 上传成功，URL:', fileUrl);
 
-      return NextResponse.json({
-        success: true,
-        isTemporary: true,
-        fileName: fileName,
-        size: file.size,
-        type: file.type,
-        // 对于图片，返回 data URL
-        dataUrl: file.type.startsWith('image/')
-          ? `data:${file.type};base64,${base64}`
-          : undefined,
-        // 对于音频和歌词，提示需要对象存储
-        warning: 'Serverless 环境不支持文件持久化，请配置对象存储'
-      });
-    } else {
-      // 本地环境返回 URL
-      const fileUrl = `/uploads/${fileName}`;
-      console.log('[Upload] 上传成功，URL:', fileUrl);
-
-      return NextResponse.json({
-        success: true,
-        url: fileUrl,
-        fileName: fileName,
-        size: file.size,
-        type: file.type
-      });
-    }
+    return NextResponse.json({
+      success: true,
+      url: fileUrl,
+      fileName: fileName,
+      size: file.size,
+      type: file.type
+    });
   } catch (error) {
     console.error('[Upload] 文件上传失败（未捕获的错误）:', error);
     return NextResponse.json(

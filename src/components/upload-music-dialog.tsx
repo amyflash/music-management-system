@@ -249,7 +249,7 @@ export function UploadMusicDialog({ open, onOpenChange, onUpload, presetAlbum }:
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="albumYear">发行年份</Label>
+                  <Label htmlFor="albumYear">发行年份（可选）</Label>
                   <Input
                     id="albumYear"
                     type="number"

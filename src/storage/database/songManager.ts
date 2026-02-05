@@ -1,5 +1,5 @@
-import { eq, and, SQL, like } from "drizzle-orm";
-import { getDb } from "coze-coding-dev-sdk";
+import { eq, and, like } from "drizzle-orm";
+import { getDb } from "./db";
 import {
   songs,
   insertSongSchema,
@@ -86,13 +86,15 @@ export class SongManager {
   async deleteSong(id: string): Promise<boolean> {
     const db = await getDb();
     const result = await db.delete(songs).where(eq(songs.id, id));
-    return (result.rowCount ?? 0) > 0;
+    // @ts-expect-error libsql client returns different result format
+    return (result.changes ?? 0) > 0;
   }
 
   async deleteSongsByAlbumId(albumId: string): Promise<number> {
     const db = await getDb();
     const result = await db.delete(songs).where(eq(songs.albumId, albumId));
-    return result.rowCount ?? 0;
+    // @ts-expect-error libsql client returns different result format
+    return result.changes ?? 0;
   }
 }
 
