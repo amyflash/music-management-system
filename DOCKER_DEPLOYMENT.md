@@ -1,4 +1,4 @@
-# Docker 部署指南
+# Docker 部署指南（SQLite 版本）
 
 本指南帮助你使用 Docker 在 VPS 服务器上一键部署音乐管理系统。
 
@@ -38,8 +38,8 @@
 ### 硬件要求
 
 - **CPU**: 1 核心以上
-- **内存**: 1GB 以上（推荐 2GB）
-- **磁盘**: 20GB 以上（根据音乐文件数量调整）
+- **内存**: 512MB 以上（推荐 1GB）
+- **磁盘**: 10GB 以上（根据音乐文件数量调整）
 - **网络**: 稳定的网络连接
 
 ### 软件要求
@@ -71,9 +71,6 @@ curl -fsSL https://get.docker.com | sh
 sudo apt-get update
 sudo apt-get install docker-compose-plugin
 
-# 或者安装 Docker Compose V1（已废弃）
-# sudo apt-get install docker-compose
-
 # 启动 Docker 服务
 sudo systemctl start docker
 sudo systemctl enable docker
@@ -93,10 +90,6 @@ sudo yum install -y docker-ce docker-ce-cli containerd.io
 
 # 安装 Docker Compose V2 插件（推荐）
 sudo yum install -y docker-compose-plugin
-
-# 或者安装 Docker Compose V1（已废弃）
-# sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-# sudo chmod +x /usr/local/bin/docker-compose
 
 # 启动 Docker 服务
 sudo systemctl start docker
@@ -134,10 +127,8 @@ bash deploy.sh
 
 部署脚本会自动完成以下操作：
 - ✅ 检查系统要求
-- ✅ 配置环境变量
-- ✅ 创建必要目录
-- ✅ 拉取 Docker 镜像
-- ✅ 构建应用
+- ✅ 创建必要目录（data, public/uploads）
+- ✅ 拉取 Docker 镜像（或本地构建）
 - ✅ 启动服务
 - ✅ 等待服务就绪
 
@@ -148,45 +139,35 @@ bash deploy.sh
 - **本地**: http://localhost:5000
 - **外网**: http://your-server-ip:5000
 
-**默认登录信息**:
-- 用户名: `admin`
-- 密码: `admin123`
-
-**重要**: 首次登录后请立即修改密码！
-
 ---
 
 ## 手动部署
 
 如果你想手动控制部署过程，可以按照以下步骤操作：
 
-### 1. 配置环境变量
+### 1. 创建必要目录
 
 ```bash
-# 复制环境变量模板
-cp .env.example .env
-
-# 编辑配置文件
-nano .env
+mkdir -p data public/uploads
+chmod 755 data public/uploads
 ```
 
-修改以下配置：
+### 2. 构建和启动
 
-```env
-# 数据库配置（建议修改默认密码）
-DB_USER=musicuser
-DB_PASSWORD=your_secure_password_here  # 修改为强密码
-DB_NAME=musicdb
-```
-
-### 2. 创建上传目录
+#### 使用预构建镜像（推荐）
 
 ```bash
-mkdir -p public/uploads
-chmod 755 public/uploads
+# 拉取镜像
+docker-compose pull app
+
+# 启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
 ```
 
-### 3. 构建和启动
+#### 本地构建
 
 ```bash
 # 构建镜像
@@ -199,26 +180,13 @@ docker-compose up -d
 docker-compose logs -f
 ```
 
-### 4. 初始化数据库
+### 3. 初始化数据库
 
-数据库会在首次启动时自动初始化，无需手动操作。
+数据库会在首次启动时自动初始化，无需手动操作。SQLite 数据库文件将创建在 `data/music.db`。
 
 ---
 
 ## 配置说明
-
-### 环境变量 (.env)
-
-```env
-# 数据库配置
-DB_USER=musicuser              # 数据库用户名
-DB_PASSWORD=your_password      # 数据库密码（建议修改）
-DB_NAME=musicdb               # 数据库名称
-
-# 应用配置
-NODE_ENV=production           # 运行环境
-PORT=5000                     # 应用端口
-```
 
 ### Docker Compose 配置 (docker-compose.yml)
 
@@ -233,15 +201,13 @@ services:
       - "8080:5000"  # 容器端口保持 5000，映射到主机 8080
 ```
 
-#### 修改数据库端口
-
-如果需要从外部访问数据库：
+#### 自定义数据库路径
 
 ```yaml
 services:
-  postgres:
-    ports:
-      - "5433:5432"  # 映射到主机 5433 端口
+  app:
+    environment:
+      - SQLITE_DB_PATH=/app/data/custom.db
 ```
 
 #### 配置资源限制
@@ -253,16 +219,18 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 2G
+          memory: 1G
         reservations:
           cpus: '1'
-          memory: 1G
-  postgres:
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
+          memory: 512M
+```
+
+#### 使用带内存限制的配置
+
+对于内存较小的 VPS，可以使用 `docker-compose-with-memory-limit.yml`：
+
+```bash
+docker-compose -f docker-compose-with-memory-limit.yml up -d
 ```
 
 ---
@@ -287,11 +255,8 @@ docker-compose ps
 # 查看日志
 docker-compose logs -f
 
-# 查看应用日志
+# 只查看应用日志
 docker-compose logs -f app
-
-# 查看数据库日志
-docker-compose logs -f postgres
 ```
 
 ### 进入容器
@@ -299,22 +264,24 @@ docker-compose logs -f postgres
 ```bash
 # 进入应用容器
 docker-compose exec app sh
-
-# 进入数据库容器
-docker-compose exec postgres bash
-
-# 连接数据库
-docker-compose exec postgres psql -U musicuser -d musicdb
 ```
 
-### 数据库操作
+### 数据查看
+
+#### 查看 SQLite 数据库
 
 ```bash
+# 进入容器
+docker-compose exec app sh
+
+# 安装 sqlite3（如果不包含）
+apk add sqlite3
+
 # 连接数据库
-docker-compose exec postgres psql -U musicuser -d musicdb
+sqlite3 data/music.db
 
 # 查看所有表
-\dt
+.tables
 
 # 查看专辑表
 SELECT * FROM albums;
@@ -323,7 +290,7 @@ SELECT * FROM albums;
 SELECT * FROM songs;
 
 # 退出
-\q
+.quit
 ```
 
 ---
@@ -357,10 +324,10 @@ crontab -e
 mkdir -p backups
 
 # 备份数据库
-docker-compose exec postgres pg_dump -U musicuser musicdb > backups/music_backup_$(date +%Y%m%d_%H%M%S).sql
+cp data/music.db backups/music.db.$(date +%Y%m%d_%H%M%S)
 
 # 压缩备份文件
-gzip backups/music_backup_*.sql
+gzip backups/music.db.$(date +%Y%m%d_%H%M%S)
 ```
 
 #### 备份上传文件
@@ -373,11 +340,17 @@ tar -czf backups/uploads_backup_$(date +%Y%m%d_%H%M%S).tar.gz public/uploads/
 #### 恢复数据库
 
 ```bash
+# 停止服务
+docker-compose down
+
 # 解压备份文件（如果已压缩）
-gunzip backups/music_backup_20240101_020000.sql.gz
+gunzip backups/music.db.20240101_020000.gz
 
 # 恢复数据库
-docker-compose exec -T postgres psql -U musicuser musicdb < backups/music_backup_20240101_020000.sql
+cp backups/music.db.20240101_020000 data/music.db
+
+# 重启服务
+docker-compose up -d
 ```
 
 #### 恢复上传文件
@@ -429,25 +402,33 @@ sudo firewall-cmd --permanent --add-port=5000/tcp
 sudo firewall-cmd --reload
 ```
 
-### 数据库连接失败
+### 数据库问题
 
-#### 检查数据库状态
+#### 检查数据库文件
 
 ```bash
-docker-compose ps postgres
-docker-compose logs postgres
+ls -la data/music.db
+
+# 检查数据库完整性
+docker-compose exec app sqlite3 data/music.db "PRAGMA integrity_check;"
 ```
 
-#### 测试数据库连接
+#### 重建数据库
+
+如果数据库损坏，可以删除并重建：
 
 ```bash
-docker-compose exec postgres pg_isready -U musicuser -d musicdb
-```
+# 停止服务
+docker-compose down
 
-#### 重启数据库
+# 备份现有数据库（如果有）
+cp data/music.db data/music.db.bak
 
-```bash
-docker-compose restart postgres
+# 删除数据库
+rm data/music.db
+
+# 重启服务（会自动创建新数据库）
+docker-compose up -d
 ```
 
 ### 文件上传失败
@@ -468,10 +449,14 @@ chown -R $(id -u):$(id -g) public/uploads
 df -h
 ```
 
-如果磁盘空间不足，清理 Docker 缓存：
+如果磁盘空间不足，清理：
 
 ```bash
+# 清理 Docker 缓存
 docker system prune -a
+
+# 清理旧备份
+find backups/ -name "*.gz" -mtime +30 -delete
 ```
 
 ### 应用启动缓慢
@@ -486,24 +471,23 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 1G
 ```
 
-#### 优化数据库性能
+#### 检查数据库大小
 
-在 `docker-compose.yml` 中添加：
+```bash
+ls -lh data/music.db
+```
 
-```yaml
-services:
-  postgres:
-    command:
-      - postgres
-      - -c
-      - shared_buffers=256MB
-      - -c
-      - max_connections=100
-      - -c
-      - effective_cache_size=1GB
+如果数据库过大，考虑清理旧数据或优化：
+
+```bash
+# 进入容器
+docker-compose exec app sh
+
+# 运行 SQLite 优化
+sqlite3 data/music.db "VACUUM;"
 ```
 
 ---
@@ -529,7 +513,9 @@ git pull origin main
 # 2. 备份数据（可选但推荐）
 bash backup.sh
 
-# 3. 重新构建
+# 3. 拉取最新镜像（或重新构建）
+docker-compose pull app
+# 或
 docker-compose build
 
 # 4. 重启服务
@@ -616,69 +602,29 @@ sudo certbot --nginx -d your-domain.com
 sudo certbot renew --dry-run
 ```
 
-### 3. 配置 Redis 缓存（可选）
+### 3. 数据库优化
 
-修改 `docker-compose.yml`：
+#### 运行 VACUUM
 
-```yaml
-services:
-  redis:
-    image: redis:alpine
-    container_name: music-redis
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+定期运行 VACUUM 命令优化数据库：
 
-volumes:
-  redis_data:
+```bash
+docker-compose exec app sh -c "sqlite3 data/music.db 'VACUUM;'"
 ```
 
-### 4. 数据库优化
+#### 配置 WAL 模式
 
-在 `docker-compose.yml` 中添加 PostgreSQL 优化参数：
+WAL（Write-Ahead Logging）模式可以提高并发性能：
 
-```yaml
-services:
-  postgres:
-    command:
-      - postgres
-      - -c
-      - shared_buffers=256MB
-      - -c
-      - work_mem=16MB
-      - -c
-      - effective_cache_size=1GB
-      - -c
-      - maintenance_work_mem=128MB
-      - -c
-      - checkpoint_completion_target=0.9
-      - -c
-      - wal_buffers=16MB
-      - -c
-      - default_statistics_target=100
-      - -c
-      - random_page_cost=1.1
-      - -c
-      - effective_io_concurrency=200
-      - -c
-      - work_mem=2621kB
-      - -c
-      - min_wal_size=1GB
-      - -c
-      - max_wal_size=4GB
+```bash
+docker-compose exec app sh -c "sqlite3 data/music.db 'PRAGMA journal_mode=WAL;'"
 ```
 
 ---
 
 ## 安全建议
 
-### 1. 修改默认密码
-
-首次登录后立即修改管理员密码。
-
-### 2. 配置防火墙
+### 1. 配置防火墙
 
 ```bash
 # Ubuntu/Debian
@@ -694,11 +640,11 @@ sudo firewall-cmd --permanent --add-service=https
 sudo firewall-cmd --reload
 ```
 
-### 3. 定期备份
+### 2. 定期备份
 
 设置自动备份（见[数据备份](#数据备份)）。
 
-### 4. 更新系统
+### 3. 更新系统
 
 ```bash
 # Ubuntu/Debian
@@ -708,15 +654,13 @@ sudo apt-get update && sudo apt-get upgrade -y
 sudo yum update -y
 ```
 
-### 5. 限制数据库访问
+### 4. 保护数据文件
 
-修改 `docker-compose.yml`，移除数据库端口映射：
+确保 `data` 目录和 `music.db` 文件只有容器可以访问：
 
-```yaml
-services:
-  postgres:
-    # ports:
-    #   - "5432:5432"  # 注释掉此行
+```bash
+chmod 700 data
+chmod 600 data/music.db
 ```
 
 ---
@@ -734,18 +678,15 @@ services:
       - "8080:5000"  # 修改左侧端口号
 ```
 
-### Q: 如何增加磁盘空间？
+### Q: 如何自定义数据库路径？
 
-编辑 Docker 配置，修改数据存储路径：
+在 `docker-compose.yml` 中添加环境变量：
 
 ```yaml
 services:
-  postgres:
-    volumes:
-      - /mnt/data/postgres:/var/lib/postgresql/data
   app:
-    volumes:
-      - /mnt/data/uploads:/app/public/uploads
+    environment:
+      - SQLITE_DB_PATH=/app/data/custom.db
 ```
 
 ### Q: 如何迁移到其他服务器？
@@ -753,21 +694,52 @@ services:
 1. 在旧服务器备份数据：
    ```bash
    bash backup.sh
-   tar -czf uploads.tar.gz public/uploads/
    ```
 
-2. 在新服务器恢复：
+2. 拷贝备份文件到新服务器
+
+3. 在新服务器部署并恢复：
    ```bash
    # 部署应用
    bash deploy.sh
 
+   # 停止服务
+   docker-compose down
+
    # 恢复数据库
-   gunzip backups/music_backup_*.sql.gz
-   docker-compose exec -T postgres psql -U musicuser musicdb < backups/music_backup_*.sql
+   cp backups/music.db.YYYYMMDD_HHMMSS data/music.db
 
    # 恢复上传文件
-   tar -xzf uploads.tar.gz
+   tar -xzf backups/uploads_YYYYMMDD_HHMMSS.tar.gz
+
+   # 重启服务
+   docker-compose up -d
    ```
+
+### Q: SQLite vs PostgreSQL 有什么区别？
+
+SQLite 更简单，适用于单用户应用：
+- ✅ 无需额外数据库服务
+- ✅ 配置简单
+- ✅ 资源占用少
+- ✅ 文件数据库，易于备份
+- ⚠️ 并发写入性能较差
+
+PostgreSQL 适用于多用户或高并发场景：
+- ✅ 支持高并发
+- ✅ 更强大的查询功能
+- ⚠️ 配置复杂
+- ⚠️ 资源占用较多
+
+### Q: 数据库文件损坏怎么办？
+
+1. 停止服务
+2. 恢复最近的备份
+3. 如果没有备份，尝试修复：
+
+```bash
+docker-compose exec app sh -c "sqlite3 data/music.db '.recover' | sqlite3 data/music_recovered.db'"
+```
 
 ### Q: 如何查看实时日志？
 
@@ -779,7 +751,7 @@ docker-compose logs -f
 docker-compose logs -f app
 
 # 只查看错误日志
-docker-compose logs -f | grep ERROR
+docker-compose logs -f | grep -i error
 ```
 
 ---
@@ -789,7 +761,7 @@ docker-compose logs -f | grep ERROR
 如果遇到问题：
 
 1. 查看日志：`docker-compose logs -f`
-2. 检查配置：`.env` 和 `docker-compose.yml`
+2. 检查配置：`docker-compose.yml`
 3. 查看文档：README.md
 4. 提交 Issue：项目仓库 Issues
 

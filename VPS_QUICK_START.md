@@ -1,8 +1,8 @@
-# VPS 快速部署指南
+# VPS 快速部署指南（SQLite 版本）
 
 ## 前提条件
 
-- 一台 VPS 服务器（推荐配置：2核2G，20GB 磁盘）
+- 一台 VPS 服务器（推荐配置：1核1G，10GB 磁盘）
 - 服务器已安装 Docker 和 Docker Compose V2
 - SSH 访问权限
 
@@ -47,10 +47,7 @@ bash deploy.sh
 
 ## 默认账号
 
-- 用户名: `admin`
-- 密码: `admin123`
-
-**重要**: 首次登录后立即修改密码！
+使用外部认证服务登录：https://auth.516768.xyz
 
 ## 常用命令
 
@@ -120,6 +117,19 @@ netstat -tuln | grep 5000
 docker compose logs -f
 ```
 
+### 数据库问题
+
+```bash
+# 检查数据库文件
+ls -la data/music.db
+
+# 查看数据库日志
+docker compose logs app
+
+# 检查数据库完整性
+docker compose exec app sh -c "sqlite3 data/music.db 'PRAGMA integrity_check;'"
+```
+
 ### 磁盘空间不足
 
 ```bash
@@ -130,14 +140,14 @@ docker system prune -a
 find backups/ -name "*.gz" -mtime +30 -delete
 ```
 
-### 数据库连接失败
+### 文件上传失败
 
 ```bash
-# 重启数据库
-docker compose restart postgres
+# 检查目录权限
+ls -la public/uploads
 
-# 查看数据库日志
-docker compose logs postgres
+# 修复权限
+chmod 755 public/uploads
 ```
 
 ## 数据迁移
@@ -147,11 +157,9 @@ docker compose logs postgres
 ```bash
 # 在旧服务器
 bash backup.sh
-tar -czf uploads.tar.gz public/uploads/
 
-# 下载到本地
-scp root@old-server:/path/to/backups/* .
-scp root@old-server:/path/to/uploads.tar.gz .
+# 下载到本地或直接传输
+scp root@old-server:/path/to/music-system/backups/* ./backups/
 ```
 
 ### 恢复
@@ -161,12 +169,18 @@ scp root@old-server:/path/to/uploads.tar.gz .
 # 部署应用
 bash deploy.sh
 
-# 恢复数据库
-gunzip backups/music_backup_*.sql.gz
-docker compose exec -T postgres psql -U musicuser musicdb < backups/music_backup_*.sql
+# 停止服务
+docker compose down
+
+# 恢复数据库（解压如果需要）
+gunzip backups/music.db.*.gz
+cp backups/music.db.DATE data/music.db
 
 # 恢复上传文件
-tar -xzf uploads.tar.gz
+tar -xzf backups/uploads_*.tar.gz
+
+# 重启服务
+docker compose up -d
 ```
 
 ## 监控和维护
@@ -188,7 +202,7 @@ df -h
 
 # 查看各目录占用
 du -sh public/uploads/
-du -sh /var/lib/docker/volumes/
+du -sh data/
 ```
 
 ### 查看日志大小
@@ -199,6 +213,16 @@ docker system df
 
 # 应用日志
 docker compose logs --tail 100 app
+```
+
+### 数据库优化
+
+```bash
+# 运行 VACUUM 优化数据库
+docker compose exec app sh -c "sqlite3 data/music.db 'VACUUM;'"
+
+# 启用 WAL 模式提高性能
+docker compose exec app sh -c "sqlite3 data/music.db 'PRAGMA journal_mode=WAL;'"
 ```
 
 ## 性能优化
@@ -213,12 +237,62 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 1G
+```
+
+### 使用内存限制版配置
+
+对于内存较小的 VPS，使用 `docker-compose-with-memory-limit.yml`:
+
+```bash
+docker compose -f docker-compose-with-memory-limit.yml up -d
 ```
 
 ### 配置 Nginx 反向代理
 
 参考：[DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md) - 性能优化部分
+
+## 数据库说明
+
+本项目使用 SQLite 数据库，相比 PostgreSQL 的优势：
+
+### SQLite 优势
+- ✅ 配置简单，无需额外数据库服务
+- ✅ 资源占用少（内存 < 50MB）
+- ✅ 文件数据库，备份恢复简单
+- ✅ 适合单用户或低并发场景
+- ✅ 无需担心数据库连接配置
+
+### 使用场景
+- 个人音乐管理
+- 单用户应用
+- 低并发访问（< 10 并发）
+- 资源受限的 VPS
+
+### 数据库位置
+- 文件路径：`data/music.db`
+- 数据会自动持久化到映射的卷
+- 备份和恢复只需拷贝该文件
+
+### 数据库操作
+
+```bash
+# 进入容器
+docker compose exec app sh
+
+# 连接数据库（需要安装 sqlite3）
+apk add sqlite3
+sqlite3 data/music.db
+
+# 查看 SQL 命令
+.tables
+.schema albums
+SELECT * FROM albums;
+SELECT * FROM songs;
+
+# 退出
+.quit
+```
 
 ## 技术支持
 
@@ -227,10 +301,18 @@ services:
 1. 查看日志：`docker compose logs -f`
 2. 检查文档：[README.md](./README.md)
 3. 查看详细部署文档：[DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)
-4. 查看 V2 升级说明：[DOCKER_COMPOSE_V2.md](./DOCKER_COMPOSE_V2.md)
+4. 查看认证服务：https://auth.516768.xyz
 5. 提交 Issue：项目仓库
 
 ## 更新日志
+
+### 版本 2.0.0 (2025-02-05)
+
+- ✅ 迁移到 SQLite 数据库
+- ✅ 移除 PostgreSQL 依赖
+- ✅ 简化部署流程
+- ✅ 减少资源占用
+- ✅ 优化备份恢复流程
 
 ### 版本 1.1.0 (2024-02-02)
 

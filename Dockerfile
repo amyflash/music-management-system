@@ -17,14 +17,14 @@ RUN pnpm install --frozen-lockfile
 # 复制项目文件
 COPY . .
 
-# 生成 Prisma 客户端
-RUN pnpm prisma generate || echo "Prisma not configured"
-
 # 构建项目
 RUN pnpm build
 
-# 创建上传目录
-RUN mkdir -p public/uploads
+# 创建必要的目录
+RUN mkdir -p data public/uploads
+
+# 设置目录权限
+RUN chmod 755 data public/uploads
 
 # 暴露端口
 EXPOSE 5000

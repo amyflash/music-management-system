@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 音乐管理系统 Docker 一键部署脚本
+# 音乐管理系统 Docker 一键部署脚本（SQLite 版本）
 # 使用方法: bash deploy.sh
 
 set -e
@@ -79,54 +79,26 @@ check_requirements() {
     fi
 }
 
-# 配置环境变量
-configure_env() {
-    print_step "配置环境变量"
-
-    if [ ! -f .env ]; then
-        print_info "创建 .env 文件..."
-        cp .env.example .env
-
-        # 提示用户修改数据库密码
-        print_warning "建议修改默认数据库密码"
-        read -p "是否修改数据库密码？(y/n) " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            read -sp "请输入数据库密码: " db_password
-            echo
-            sed -i "s/your_secure_password_here/$db_password/g" .env
-            print_success "数据库密码已更新"
-        fi
-
-        print_success ".env 文件已创建"
-    else
-        print_info ".env 文件已存在，跳过创建"
-    fi
-}
-
 # 创建必要目录
 create_directories() {
     print_step "创建必要目录"
 
-    mkdir -p public/uploads
-    chmod 755 public/uploads
-    print_success "public/uploads 目录已创建"
+    mkdir -p data public/uploads
+    chmod 755 data public/uploads
+    print_success "data 和 public/uploads 目录已创建"
 }
 
-# 拉取镜像
-pull_images() {
+# 拉取镜像（如果使用预构建镜像）
+pull_image() {
     print_step "拉取 Docker 镜像"
 
-    print_info "拉取 PostgreSQL 镜像..."
-    docker pull postgres:15-alpine
-
-    print_info "拉取 Node.js 镜像..."
-    docker pull node:20-alpine
+    print_info "拉取应用镜像..."
+    ${DOCKER_COMPOSE_CMD} pull app
 
     print_success "镜像拉取完成"
 }
 
-# 构建应用
+# 构建应用（如果使用本地构建）
 build_app() {
     print_step "构建应用"
 
@@ -150,30 +122,6 @@ start_services() {
 wait_for_services() {
     print_step "等待服务就绪"
 
-    print_info "等待数据库初始化..."
-    sleep 10
-
-    # 检查数据库是否就绪
-    max_attempts=30
-    attempt=0
-
-    while [ $attempt -lt $max_attempts ]; do
-        if ${DOCKER_COMPOSE_CMD} exec -T postgres pg_isready -U musicuser -d musicdb >/dev/null 2>&1; then
-            print_success "数据库已就绪"
-            break
-        fi
-
-        attempt=$((attempt + 1))
-        echo -n "."
-        sleep 2
-    done
-
-    if [ $attempt -eq $max_attempts ]; then
-        print_error "数据库启动超时"
-        exit 1
-    fi
-
-    # 等待应用启动
     print_info "等待应用启动..."
     sleep 10
 
@@ -219,10 +167,6 @@ show_access_info() {
     echo "  本地: http://localhost:5000"
     echo "  外网: http://$(hostname -I | awk '{print $1}'):5000"
     echo ""
-    echo "默认登录信息:"
-    echo "  用户名: admin"
-    echo "  密码: admin123"
-    echo ""
     echo "常用命令:"
     echo "  查看日志: ${DOCKER_COMPOSE_CMD} logs -f"
     echo "  停止服务: ${DOCKER_COMPOSE_CMD} down"
@@ -230,12 +174,16 @@ show_access_info() {
     echo "  查看状态: ${DOCKER_COMPOSE_CMD} ps"
     echo ""
     echo "数据备份:"
-    echo "  备份数据库: ${DOCKER_COMPOSE_CMD} exec postgres pg_dump -U musicuser musicdb > backup.sql"
-    echo "  恢复数据库: ${DOCKER_COMPOSE_CMD} exec -T postgres psql -U musicuser musicdb < backup.sql"
+    echo "  备份数据库: cp data/music.db backup/music.db.\$(date +%Y%m%d)"
+    echo "  恢复数据库: cp backup/music.db.YYYYMMDD data/music.db"
     echo ""
     echo "配置文件:"
-    echo "  环境变量: .env"
     echo "  Docker Compose: docker-compose.yml"
+    echo ""
+    echo "注意："
+    echo "  - 数据库文件: data/music.db"
+    echo "  - 上传文件: public/uploads/"
+    echo "  - 请定期备份数据库文件"
     echo ""
 }
 
@@ -244,23 +192,26 @@ main() {
     echo ""
     echo "========================================"
     echo "  音乐管理系统 Docker 一键部署脚本"
+    echo "  (SQLite 版本)"
     echo "========================================"
     echo ""
 
     # 检查系统要求
     check_requirements
 
-    # 配置环境变量
-    configure_env
-
     # 创建必要目录
     create_directories
 
-    # 拉取镜像
-    pull_images
-
-    # 构建应用
-    build_app
+    # 询问使用预构建镜像还是本地构建
+    read -p "是否使用预构建的 Docker Hub 镜像？(推荐，y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        # 使用预构建镜像
+        pull_image
+    else
+        # 本地构建
+        build_app
+    fi
 
     # 启动服务
     start_services

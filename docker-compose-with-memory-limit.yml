@@ -1,33 +1,5 @@
 services:
-  # PostgreSQL 数据库
-  postgres:
-    image: postgres:15-alpine
-    container_name: music-db
-    restart: always
-    # 内存限制（可选）
-    # deploy:
-    #   resources:
-    #     limits:
-    #       memory: 512M
-    #     reservations:
-    #       memory: 256M
-    environment:
-      POSTGRES_USER: ${DB_USER:-musicuser}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-musicpass}
-      POSTGRES_DB: ${DB_NAME:-musicdb}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U musicuser -d musicdb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  # Next.js 应用
+  # Next.js 应用（带内存限制）
   app:
     # 选项 1：使用 Docker Hub 镜像（推荐，避免 VPS 构建内存不足）
     image: harrietlq1984/music-management-system:latest
@@ -39,39 +11,30 @@ services:
 
     container_name: music-app
     restart: always
-    # 内存限制（可选）
-    # deploy:
-    #   resources:
-    #     limits:
-    #       memory: 1G
-    #     reservations:
-    #       memory: 512M
+
+    # 内存限制（用于低内存 VPS）
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
     ports:
       - "5000:5000"
     environment:
-      - DATABASE_URL=postgresql://${DB_USER:-musicuser}:${DB_PASSWORD:-musicpass}@postgres:5432/${DB_NAME:-musicdb}
       - NODE_ENV=production
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - PORT=5000
+      # 可选：自定义数据库路径
+      # - SQLITE_DB_PATH=/app/data/music.db
     volumes:
+      # 持久化数据库文件
+      - ./data:/app/data
+      # 持久化上传文件
       - ./public/uploads:/app/public/uploads
-      - app_node_modules:/app/node_modules
-    networks:
-      - music-network
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:5000"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-networks:
-  music-network:
-    driver: bridge
-
-volumes:
-  postgres_data:
-    driver: local
-  app_node_modules:
-    driver: local

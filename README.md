@@ -1,6 +1,6 @@
 # 音乐管理系统
 
-一个基于 Next.js 16 + PostgreSQL 的单用户音乐管理网站，支持专辑管理、歌曲上传、在线播放和歌词同步显示。
+一个基于 Next.js 16 + SQLite 的单用户音乐管理网站，支持专辑管理、歌曲上传、在线播放和歌词同步显示。
 
 ## 功能特性
 
@@ -30,8 +30,9 @@
   - 支持从 URL 加载歌词
 
 - 🔐 **用户认证**
-  - 基于 Token 的登录系统
+  - 基于 Bearer Token 的登录系统
   - 登录状态持久化（localStorage）
+  - 支持外部认证服务：https://auth.516768.xyz
 
 - 📤 **文件上传**
   - 支持音频文件上传（MP3）
@@ -53,9 +54,10 @@
 ### 后端
 
 - **API**: Next.js API Routes
-- **数据库**: PostgreSQL
+- **数据库**: SQLite (通过 @libsql/client)
 - **ORM**: Drizzle ORM
 - **认证**: Bearer Token
+- **认证服务**: https://auth.516768.xyz
 
 ### 开发工具
 
@@ -75,7 +77,9 @@ src/
 │   │   ├── songs/           # 歌曲 API
 │   │   │   ├── route.ts    # 歌曲列表（GET, POST）
 │   │   │   └── [id]/       # 歌曲详情（GET, PUT, DELETE）
-│   │   └── upload/         # 文件上传 API
+│   │   ├── upload/         # 文件上传 API
+│   │   ├── audio/          # 音频播放 API
+│   │   └── files/          # 文件访问 API
 │   ├── album/              # 专辑详情页
 │   │   └── [id]/page.tsx
 │   ├── music/              # 音乐列表页
@@ -88,24 +92,39 @@ src/
 │   └── page.tsx            # 首页
 ├── components/             # React 组件
 │   ├── ui/                # shadcn/ui 基础组件
-│   ├── upload-music-dialog.tsx      # 上传音乐对话框
-│   ├── edit-album-dialog.tsx        # 编辑专辑对话框
-│   └── edit-song-dialog.tsx         # 编辑歌曲对话框
+│   ├── upload-song-dialog.tsx         # 上传歌曲对话框
+│   ├── upload-music-dialog.tsx       # 上传音乐对话框
+│   ├── edit-song-dialog.tsx          # 编辑歌曲对话框
+│   └── edit-album-dialog.tsx         # 编辑专辑对话框
 ├── contexts/              # React Context
 │   └── AuthContext.tsx    # 认证上下文
+├── hooks/                 # 自定义 Hooks
+│   └── use-mobile.ts      # 移动端检测 Hook
 ├── lib/                   # 工具函数库
 │   ├── musicData.ts       # 音乐数据类型
 │   ├── lrcParser.ts       # LRC 歌词解析器
-│   └── storageManager.ts  # 数据存储管理器
+│   ├── storageManager.ts  # 数据存储管理器
+│   ├── auth.ts            # 认证工具
+│   └── utils.ts           # 通用工具
 ├── storage/               # 数据存储
 │   └── database/         # 数据库相关
 │       ├── shared/
 │       │   └── schema.ts # 数据库表定义
+│       ├── db.ts          # SQLite 数据库连接
 │       ├── albumManager.ts   # 专辑数据管理
 │       ├── songManager.ts    # 歌曲数据管理
 │       └── index.ts          # 导出
-└── public/
-    └── uploads/           # 上传文件存储目录
+├── scripts/               # 部署和构建脚本
+│   ├── build.sh           # 构建脚本
+│   ├── dev.sh             # 开发启动脚本
+│   ├── start.sh           # 生产启动脚本
+│   ├── pre-deploy.sh      # 部署前准备脚本
+│   └── init-db.ts         # 数据库初始化脚本
+public/
+├── favicon.ico            # 网站图标
+└── uploads/               # 上传文件存储目录
+data/
+└── music.db               # SQLite 数据库文件
 ```
 
 ## 数据库结构
@@ -114,47 +133,55 @@ src/
 
 | 字段名 | 类型 | 说明 | 约束 |
 |--------|------|------|------|
-| id | varchar(36) | 专辑 ID（UUID） | PRIMARY KEY |
-| title | varchar(255) | 专辑名称 | NOT NULL |
-| artist | varchar(255) | 歌手 | NOT NULL |
-| year | varchar(10) | 发行年份 | NOT NULL |
-| coverUrl | varchar(500) | 封面 URL | 可空 |
-| createdAt | timestamp | 创建时间 | NOT NULL, DEFAULT NOW() |
-| updatedAt | timestamp | 更新时间 | 可空 |
+| id | TEXT | 专辑 ID（UUID） | PRIMARY KEY |
+| title | TEXT | 专辑名称 | NOT NULL |
+| artist | TEXT | 歌手 | NOT NULL |
+| year | TEXT | 发行年份 | 可空 |
+| cover_url | TEXT | 封面 URL | 可空 |
+| created_at | INTEGER | 创建时间（时间戳） | NOT NULL |
+| updated_at | INTEGER | 更新时间（时间戳） | 可空 |
 
 ### songs 表（歌曲表）
 
 | 字段名 | 类型 | 说明 | 约束 |
 |--------|------|------|------|
-| id | varchar(36) | 歌曲 ID（UUID） | PRIMARY KEY |
-| albumId | varchar(36) | 专辑 ID（外键） | NOT NULL, FOREIGN KEY |
-| title | varchar(255) | 歌曲名称 | NOT NULL |
-| duration | varchar(10) | 时长（如 3:30） | NOT NULL |
-| audioUrl | varchar(500) | 音频 URL | NOT NULL |
-| lyricsUrl | varchar(500) | 歌词 URL | 可空 |
-| createdAt | timestamp | 创建时间 | NOT NULL, DEFAULT NOW() |
-| updatedAt | timestamp | 更新时间 | 可空 |
+| id | TEXT | 歌曲 ID（UUID） | PRIMARY KEY |
+| album_id | TEXT | 专辑 ID（外键） | NOT NULL, FOREIGN KEY |
+| title | TEXT | 歌曲名称 | NOT NULL |
+| duration | TEXT | 时长（如 3:30） | NOT NULL |
+| audio_url | TEXT | 音频 URL | NOT NULL |
+| lyrics_url | TEXT | 歌词 URL | 可空 |
+| created_at | INTEGER | 创建时间（时间戳） | NOT NULL |
+| updated_at | INTEGER | 更新时间（时间戳） | 可空 |
+
+**外键约束**: 删除专辑时会自动级联删除关联的歌曲 (ON DELETE CASCADE)
 
 ### 索引
 
 - `albums_title_idx`: 专辑名称索引
 - `songs_album_id_idx`: 专辑 ID 索引
 
+### 数据库文件位置
+
+- 默认路径：`data/music.db`
+- 可通过环境变量 `SQLITE_DB_PATH` 自定义
+
 ## API 文档
 
 ### 专辑 API
 
 #### GET /api/albums
-获取所有专辑
+获取所有专辑（包含歌曲数量和歌曲列表）
 
-**Query 参数:**
-- `search` (可选): 搜索关键词
-- `skip` (可选): 跳过记录数，默认 0
-- `limit` (可选): 返回记录数，默认 100
+**请求头:**
+```
+Authorization: Bearer {token}
+```
 
 **响应:**
 ```json
 {
+  "success": true,
   "albums": [
     {
       "id": "uuid",
@@ -163,14 +190,23 @@ src/
       "year": "2024",
       "coverUrl": "https://example.com/cover.jpg",
       "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": null
+      "updatedAt": null,
+      "songs": [...],
+      "songCount": 10
     }
-  ]
+  ],
+  "count": 1
 }
 ```
 
 #### POST /api/albums
 创建专辑
+
+**请求头:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
 
 **请求体:**
 ```json
@@ -185,6 +221,7 @@ src/
 **响应:**
 ```json
 {
+  "success": true,
   "album": {
     "id": "uuid",
     "title": "专辑名称",
@@ -203,6 +240,7 @@ src/
 **响应:**
 ```json
 {
+  "success": true,
   "album": {
     "id": "uuid",
     "title": "专辑名称",
@@ -230,19 +268,10 @@ src/
 #### PUT /api/albums/[id]
 更新专辑
 
-**请求体:**
-```json
-{
-  "title": "新专辑名称",
-  "artist": "新歌手",
-  "year": "2025",
-  "coverUrl": "https://example.com/new-cover.jpg"
-}
-```
-
 **响应:**
 ```json
 {
+  "success": true,
   "album": { /* 更新后的专辑对象 */ }
 }
 ```
@@ -253,6 +282,7 @@ src/
 **响应:**
 ```json
 {
+  "success": true,
   "message": "删除成功"
 }
 ```
@@ -264,13 +294,11 @@ src/
 
 **Query 参数:**
 - `albumId` (可选): 筛选指定专辑的歌曲
-- `search` (可选): 搜索关键词
-- `skip` (可选): 跳过记录数，默认 0
-- `limit` (可选): 返回记录数，默认 100
 
 **响应:**
 ```json
 {
+  "success": true,
   "songs": [
     {
       "id": "uuid",
@@ -303,6 +331,7 @@ src/
 **响应:**
 ```json
 {
+  "success": true,
   "song": { /* 创建的歌曲对象 */ }
 }
 ```
@@ -313,6 +342,7 @@ src/
 **响应:**
 ```json
 {
+  "success": true,
   "song": { /* 歌曲对象 */ }
 }
 ```
@@ -334,6 +364,7 @@ src/
 **响应:**
 ```json
 {
+  "success": true,
   "song": { /* 更新后的歌曲对象 */ }
 }
 ```
@@ -344,6 +375,7 @@ src/
 **响应:**
 ```json
 {
+  "success": true,
   "message": "删除成功"
 }
 ```
@@ -351,7 +383,7 @@ src/
 ### 文件上传 API
 
 #### POST /api/upload
-上传文件
+上传文件（封面、音频、歌词）
 
 **请求头:**
 ```
@@ -376,12 +408,32 @@ file: <文件>
 - 图片: `image/*`
 - 歌词: `.lrc`
 
+### 音频播放 API
+
+#### GET /api/audio/[id]
+通过歌曲 ID 获取音频文件（支持流式传输）
+
+**请求头:**
+```
+Authorization: Bearer {token}
+```
+
+**响应:**
+- 音频流式响应 (audio/mpeg)
+
+### 文件访问 API
+
+#### GET /api/files/[filename]
+访问上传的文件（封面、歌词等）
+
+**响应:**
+- 文件内容
+
 ## 快速开始
 
 ### 环境要求
 
 - Node.js 18+
-- PostgreSQL 数据库
 - pnpm 包管理器
 
 ### 安装依赖
@@ -390,29 +442,29 @@ file: <文件>
 pnpm install
 ```
 
-### 配置环境变量
+### 配置环境变量（可选）
 
-创建 `.env` 文件：
+创建 `.env` 文件（如需自定义配置）：
 
 ```env
-# 数据库连接
-DATABASE_URL=postgresql://user:password@localhost:5432/music_db
+# 数据库配置（可选，默认使用 data/music.db）
+# SQLITE_DB_PATH=/path/to/custom/music.db
+
+# 应用配置（可选）
+NODE_ENV=development
+PORT=5000
 ```
 
-### 数据库初始化
+### 创建必要的目录
 
 ```bash
-# 同步数据库模型
-coze-coding-ai db generate-models
-
-# 创建数据表
-coze-coding-ai db upgrade
+mkdir -p data public/uploads
 ```
 
 ### 启动开发服务器
 
 ```bash
-coze dev
+pnpm dev
 ```
 
 启动后，在浏览器中打开 [http://localhost:5000](http://localhost:5000) 查看应用。
@@ -420,138 +472,116 @@ coze dev
 ### 构建生产版本
 
 ```bash
-coze build
+pnpm build
 ```
 
 ### 启动生产服务器
 
 ```bash
-coze start
+pnpm start
 ```
 
 ---
 
-## 🚀 Docker 一键部署（推荐 VPS 部署）
+## 🐳 Docker 部署
 
-如果你想在 VPS 服务器上部署，推荐使用 Docker 方式，更加简单和稳定。
+### 注意事项
+
+⚠️ **重要**: 项目当前使用 SQLite 数据库，Docker 部署配置需要相应调整。
+
+如果直接使用现有的 `docker-compose.yml`，需要修改为使用 SQLite 而非 PostgreSQL。建议使用以下简化的 Docker 部署方式。
 
 ### 前置要求
 
 - Docker 20.10+
 - Docker Compose 1.29+
-- 1GB+ 内存
-- 20GB+ 磁盘空间
+- 512MB+ 内存
+- 10GB+ 磁盘空间
 
-### 快速部署
+### 快速部署（使用 SQLite）
 
-```bash
-# 1. 克隆项目
-git clone <your-repo-url> music-system
-cd music-system
+创建 `docker-compose.simple.yml`：
 
-# 2. 运行一键部署脚本
-chmod +x deploy.sh
-bash deploy.sh
-
-# 3. 访问应用
-# 本地: http://localhost:5000
-# 外网: http://your-server-ip:5000
+```yaml
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: music-app
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+    volumes:
+      - ./data:/app/data
+      - ./public/uploads:/app/public/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 ```
 
-**默认登录信息:**
-- 用户名: `admin`
-- 密码: `admin123`
+启动服务：
+
+```bash
+docker compose -f docker-compose.simple.yml up -d
+```
 
 ### 常用命令
 
 ```bash
 # 查看服务状态
-docker compose ps
+docker compose -f docker-compose.simple.yml ps
 
 # 查看日志
-docker compose logs -f
+docker compose -f docker-compose.simple.yml logs -f
 
 # 停止服务
-docker compose down
+docker compose -f docker-compose.simple.yml down
 
 # 重启服务
-docker compose restart
+docker compose -f docker-compose.simple.yml restart
 
 # 备份数据
-bash backup.sh
-
-# 更新应用
-bash update.sh
+cp data/music.db backup/music.db.$(date +%Y%m%d)
 ```
 
-**注意：** 如果使用 Docker Compose V1，请将 `docker compose` 替换为 `docker-compose`
+### 数据持久化
 
-### 详细文档
+- 数据库文件：`data/music.db`
+- 上传文件：`public/uploads/`
 
-完整的 Docker 部署文档请查看：[DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)
+建议将这两个目录通过 Docker volumes 挂载到容器中，确保数据不会丢失。
 
 ---
 
-## 🚀 GitHub Actions 自动部署（推荐）
+## 🚀 GitHub Actions CI/CD
 
-使用 GitHub Actions 自动构建并推送到 Docker Hub，无需在 VPS 上构建。
+使用 GitHub Actions 自动构建并推送到 Docker Hub。
 
-### 优势
+### 当前配置
 
-- ✅ 不消耗 VPS 资源
-- ✅ 自动构建和推送
-- ✅ 多平台支持（amd64/arm64）
-- ✅ 构建缓存加速
-- ✅ 免费使用
+- 镜像名称：`harrietlq1984/music-management-system`
+- 触发条件：推送代码到 `main` 分支或手动触发
+- 支持平台：linux/amd64
+- 支持标签：`latest`, `YYYYMMDD`, `commit-sha`
 
-### 快速开始
-
-1. **配置 Docker Hub Secrets**
+### 配置 Secrets
 
 在 GitHub 仓库 → Settings → Secrets and variables → Actions 中添加：
 
 - `DOCKER_USERNAME`: Docker Hub 用户名
 - `DOCKER_PASSWORD`: Docker Hub Access Token
 
-2. **修改镜像名称**
-
-编辑 `.github/workflows/docker-build-simple.yml`:
-
-```yaml
-env:
-  DOCKER_IMAGE: your-username/music-management-system
-```
-
-3. **提交代码**
-
-```bash
-git add .github/workflows/
-git commit -m "feat: 添加 GitHub Actions"
-git push origin main
-```
-
-4. **在 VPS 上拉取镜像**
-
-修改 `docker-compose.yml`:
-
-```yaml
-services:
-  app:
-    image: your-username/music-management-system:latest
-    # 注释掉 build 部分
-```
-
-然后：
-
-```bash
-docker compose pull app
-docker compose up -d
-```
-
 ### 详细文档
 
 - [GitHub Actions 配置指南](./GITHUB_ACTIONS_GUIDE.md)
-- [Docker Hub 部署说明](./DOCKER_HUB_DEPLOYMENT.md)
+- [Docker Hub 权限检查](./CHECK_DOCKER_SECRETS.md)
 
 ---
 
@@ -595,139 +625,51 @@ interface Song {
 使用 fetch 调用 API：
 
 ```tsx
-const response = await fetch('/api/albums');
+const response = await fetch('/api/albums', {
+  headers: {
+    'Authorization': `Bearer ${token}`,
+  }
+});
 const data = await response.json();
 ```
 
 ## 部署说明
 
-### 1. 准备部署环境
+### 直接部署
+
+#### 1. 准备部署环境
 
 确保目标环境已安装：
 - Node.js 18+
-- PostgreSQL 数据库
+- pnpm 包管理器
 
-### 2. 安装依赖
+#### 2. 安装依赖
 
 ```bash
 pnpm install
 ```
 
-### 3. 配置环境变量
-
-在部署环境中配置 `.env` 文件：
-
-```env
-DATABASE_URL=postgresql://user:password@your-host:5432/music_db
-```
-
-### 4. 数据库迁移
+#### 3. 创建必要的目录
 
 ```bash
-# 同步数据库模型
-coze-coding-ai db generate-models
-
-# 创建数据表
-coze-coding-ai db upgrade
+mkdir -p data public/uploads
 ```
 
-### 5. 配置文件上传目录
-
-#### 本地部署 / VPS 部署
-
-⚠️ **重要**：文件上传功能需要创建 `public/uploads` 目录并设置正确的权限。
+#### 4. 构建应用
 
 ```bash
-# 创建上传目录
-mkdir -p public/uploads
-
-# 设置目录权限（Linux/macOS）
-chmod 755 public/uploads
-
-# 或使用部署脚本
-bash scripts/pre-deploy.sh
+pnpm build
 ```
 
-**注意事项：**
-- 确保 `public/uploads` 目录有写权限
-- 上传的文件不会上传到 Git（已配置 .gitignore）
-
-#### Serverless 部署（Vercel / Netlify / 云平台）
-
-⚠️ **重要限制**：Serverless 环境**不支持文件系统持久化存储**。
-
-如果你的部署环境是 Serverless（如 Vercel、Netlify、云函数等），**不能使用本地文件存储**。
-
-**症状：**
-- 上传返回 500 错误
-- 文件上传后无法访问
-- 每次部署后文件丢失
-
-**解决方案：**
-必须使用对象存储服务（OSS/S3/COS），详见 [SERVERLESS_UPLOAD.md](./SERVERLESS_UPLOAD.md)
-
-**推荐方案：**
-
-1. **阿里云 OSS**（国内访问快）
-   - 价格：¥0.12/GB/月
-   - 配置：见 [SERVERLESS_UPLOAD.md](./SERVERLESS_UPLOAD.md)
-
-2. **腾讯云 COS**
-   - 价格：类似阿里云 OSS
-   - 配置：见 [SERVERLESS_UPLOAD.md](./SERVERLESS_UPLOAD.md)
-
-3. **AWS S3**
-   - 价格：$0.023/GB/月
-   - 配置：见 [SERVERLESS_UPLOAD.md](./SERVERLESS_UPLOAD.md)
-
-4. **免费方案（测试用）**
-   - ImgBB（仅图片）：https://imgbb.com/
-   - 限制：10MB，仅用于测试
-
-**快速诊断：**
-
-检查当前环境是否为 Serverless：
-```bash
-# 检查是否有 /tmp 目录
-ls -la /tmp
-
-# 尝试写入测试文件
-echo "test" > /tmp/test.txt && echo "支持文件写入" || echo "不支持文件写入"
-```
-
-如果你看到"不支持文件写入"，说明是 Serverless 环境，**必须使用对象存储**。
+#### 5. 启动服务
 
 ```bash
-# 创建上传目录
-mkdir -p public/uploads
-
-# 设置目录权限（Linux/macOS）
-chmod 755 public/uploads
-
-# 或使用部署脚本
-bash scripts/pre-deploy.sh
-```
-
-**注意事项：**
-- 确保 `public/uploads` 目录有写权限
-- Vercel 等无服务器平台不支持文件持久化，建议使用对象存储（见 [DEPLOYMENT_UPLOAD.md](./DEPLOYMENT_UPLOAD.md)）
-- 上传的文件不会上传到 Git（已配置 .gitignore）
-
-### 6. 构建应用
-
-```bash
-coze build
-```
-
-### 7. 启动服务
-
-```bash
-coze start
+pnpm start
 ```
 
 服务将运行在 http://localhost:5000
 
-### 8. 使用进程管理器（推荐）
+#### 6. 使用进程管理器（推荐）
 
 使用 PM2 管理进程：
 
@@ -749,9 +691,13 @@ pm2 restart music-app
 
 # 停止应用
 pm2 stop music-app
+
+# 配置开机自启
+pm2 startup
+pm2 save
 ```
 
-### 9. 配置 Nginx 反向代理（可选）
+#### 7. 配置 Nginx 反向代理（可选）
 
 ```nginx
 server {
@@ -776,7 +722,7 @@ server {
 }
 ```
 
-### 10. 配置 HTTPS（可选）
+#### 8. 配置 HTTPS（可选）
 
 使用 Let's Encrypt 配置 HTTPS：
 
@@ -791,21 +737,64 @@ sudo certbot --nginx -d your-domain.com
 sudo certbot renew --dry-run
 ```
 
+## Serverless 部署说明
+
+### 限制
+
+⚠️ **重要限制**：Serverless 环境（如 Vercel、Netlify、云函数等）**不支持文件系统持久化存储**。
+
+如果你的部署环境是 Serverless，**不能使用本地 SQLite 数据库和本地文件存储**。
+
+### 解决方案
+
+必须使用：
+1. **外部数据库服务**：如 Turso（libsql 云服务）、Supabase 等
+2. **对象存储服务**：如阿里云 OSS、腾讯云 COS、AWS S3 等
+
+### 推荐方案
+
+**1. 数据库 - Turso（libsql 云服务）**
+- 免费套餐：500 行、10,000 次读取/月
+- 性价比高，与 libsql 完美兼容
+- 配置简洁
+
+**2. 对象存储 - 阿里云 OSS**
+- 价格：¥0.12/GB/月
+- 国内访问速度快
+- 支持配置文档
+
+### 详细配置
+
+详见：[SERVERLESS_UPLOAD.md](./SERVERLESS_UPLOAD.md)
+
 ## 常见问题
 
 ### 1. 文件上传失败
 
 检查：
+- `public/uploads` 目录是否存在且有写权限
 - 文件大小是否超过限制
 - 文件类型是否支持
 - Token 是否有效
 
+**快速修复：**
+```bash
+mkdir -p public/uploads
+chmod 755 public/uploads
+```
+
 ### 2. 数据库连接失败
 
 检查：
-- DATABASE_URL 是否正确配置
-- PostgreSQL 服务是否启动
-- 数据库用户权限是否足够
+- `data` 目录是否存在且有写权限
+- SQLite 数据库文件路径是否正确
+- 磁盘空间是否充足
+
+**快速修复：**
+```bash
+mkdir -p data
+chmod 755 data
+```
 
 ### 3. 歌词无法显示
 
@@ -821,19 +810,79 @@ sudo certbot renew --dry-run
 - audioUrl 是否可访问
 - 浏览器是否支持音频播放
 
-### 5. 文件上传失败
+### 5. 认证失败
 
 检查：
-- `public/uploads` 目录是否存在
-- 目录是否有写权限（`chmod 755 public/uploads`）
-- 查看服务器日志获取详细错误信息
-- Vercel 部署需要使用对象存储（见 [DEPLOYMENT_UPLOAD.md](./DEPLOYMENT_UPLOAD.md)）
+- Token 是否有效
+- 认证服务是否正常运行： https://auth.516768.xyz
+- 请求头是否包含 Authorization: Bearer {token}
 
-**快速修复：**
+### 6. Docker 部署问题
+
+检查：
+- Docker 版本是否符合要求
+- 目录权限是否正确
+- 日志查看错误信息：`docker compose logs -f`
+
 ```bash
-# 创建上传目录
-mkdir -p public/uploads
-chmod 755 public/uploads
+# 确保目录存在
+mkdir -p data public/uploads
+
+# 设置正确权限
+chmod 755 data public/uploads
+```
+
+## 备份和恢复
+
+### 备份数据
+
+```bash
+# 备份数据库
+cp data/music.db backup/music.db.$(date +%Y%m%d_%H%M%S)
+
+# 备份上传文件
+tar -czf backup/uploads_$(date +%Y%m%d_%H%M%S).tar.gz public/uploads/
+```
+
+### 恢复数据
+
+```bash
+# 恢复数据库
+cp backup/music.db.YYYYMMDD_HHMMSS data/music.db
+
+# 恢复上传文件
+tar -xzf backup/uploads_YYYYMMDD_HHMMSS.tar.gz -C public/
+```
+
+### 自动备份脚本
+
+创建 `backup.sh`：
+
+```bash
+#!/bin/bash
+BACKUP_DIR="backup"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+mkdir -p "$BACKUP_DIR"
+
+# 备份数据库
+cp data/music.db "$BACKUP_DIR/music.db.$DATE"
+
+# 备份上传文件
+tar -czf "$BACKUP_DIR/uploads_$DATE.tar.gz" public/uploads/
+
+# 清理 30 天前的备份
+find "$BACKUP_DIR" -name "music.db.*" -mtime +30 -delete
+find "$BACKUP_DIR" -name "uploads_*.tar.gz" -mtime +30 -delete
+
+echo "备份完成: $BACKUP_DIR/music.db.$DATE"
+```
+
+设置定时任务（crontab）：
+
+```bash
+# 每天凌晨 2 点自动备份
+0 2 * * * /path/to/project/backup.sh
 ```
 
 ## 许可证
